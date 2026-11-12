@@ -79,6 +79,41 @@ export function updateSpace(id: string, patch: Partial<Space>) {
 
 export type BuildingInput = Omit<Building, "id">;
 
+export function updateBuilding(id: string, patch: Partial<BuildingInput>) {
+  mutateDatabase((db) => {
+    const building = db.buildings.find((item) => item.id === id);
+    if (!building) return;
+    Object.assign(building, patch);
+    addActivity(db, {
+      type: "system",
+      title: "Building updated",
+      description: `${building.name} details were updated.`,
+      actor: "Claudine Uwimana",
+    });
+  });
+}
+
+export function addFloor(buildingId: string, name: string) {
+  mutateDatabase((db) => {
+    const building = db.buildings.find((item) => item.id === buildingId);
+    if (!building) return;
+    const levels = db.floors.filter((floor) => floor.buildingId === buildingId).length;
+    db.floors.push({
+      id: newId(`${buildingId}-f`),
+      buildingId,
+      name,
+      level: levels,
+    });
+    building.floorsCount = levels + 1;
+    addActivity(db, {
+      type: "system",
+      title: "Floor added",
+      description: `${name} was added to ${building.name}.`,
+      actor: "Claudine Uwimana",
+    });
+  });
+}
+
 export function addBuilding(input: BuildingInput) {
   const id = newId("b");
   mutateDatabase((db) => {
