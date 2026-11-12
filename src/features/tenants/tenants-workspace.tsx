@@ -223,7 +223,13 @@ export function TenantsWorkspace() {
         <StatCard label="Outstanding balances" value={formatCurrency(metrics.outstanding, true)} hint="Unpaid invoice balances" icon={Search} tone="warning" />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Tenant directory</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Search, filter, and open a profile to review agreements, invoices, and payments.
+          </p>
+        </div>
         <DataTable
           data={filtered}
           columns={columns}

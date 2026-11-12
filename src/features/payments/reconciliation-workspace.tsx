@@ -345,7 +345,14 @@ export function ReconciliationWorkspace() {
         />
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
+      <div className="mt-5">
+        <h2 className="text-[13px] font-semibold">Channel overview</h2>
+        <p className="text-[10.5px] text-muted-foreground">
+          Compare confirmed collections and pending amounts for each payment channel.
+        </p>
+      </div>
+
+      <div className="mt-2.5 grid gap-4 md:grid-cols-3">
         {channels.map((item) => (
           <div key={item.id} className="rounded-xl border border-border bg-card p-4 shadow-soft">
             <div className="flex items-start justify-between gap-2">
@@ -374,7 +381,13 @@ export function ReconciliationWorkspace() {
         ))}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Statement lines</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Match pending proofs to statement references and review unmatched or adjusted items.
+          </p>
+        </div>
         <DataTable
           data={filtered}
           columns={columns}

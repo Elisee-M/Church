@@ -236,7 +236,13 @@ export function AgreementsWorkspace() {
         <StatCard label="Tenants under agreement" value={new Set(active.map((agreement) => agreement.tenantId)).size} hint="Excludes terminated and draft" icon={Users} tone="default" />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Agreement register</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Manage active terms, renew expiring agreements, and keep space assignments up to date.
+          </p>
+        </div>
         <DataTable
           data={filtered}
           columns={columns}

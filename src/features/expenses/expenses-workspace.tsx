@@ -276,7 +276,13 @@ export function ExpensesWorkspace({ mode = "admin" }: { mode?: "admin" | "accoun
         </SectionCard>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Expense records</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Review operating costs by building and category. Expenses remain separate from rent collected.
+          </p>
+        </div>
         <DataTable
           data={filtered}
           columns={columns}

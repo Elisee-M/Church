@@ -280,7 +280,13 @@ export function PaymentsWorkspace({
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Payment ledger</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Track every transaction, verify pending transfers, and open receipts or related invoices.
+          </p>
+        </div>
         <DataTable
           data={filtered}
           columns={columns}

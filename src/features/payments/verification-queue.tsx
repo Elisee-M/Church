@@ -148,7 +148,16 @@ export function VerificationQueue() {
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-[13px] font-semibold">Payments to review</h2>
+            <p className="text-[10.5px] text-muted-foreground">
+              Approve or reject pending proofs. Approved payments are applied to invoices immediately.
+            </p>
+          </div>
+          <span className="text-[10.5px] text-muted-foreground">{filtered.length} shown</span>
+        </div>
         {filtered.length === 0 ? (
           <div className="rounded-xl border border-border bg-card shadow-soft">
             <EmptyState

@@ -223,8 +223,14 @@ export function ReceiptsWorkspace() {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-12">
+      <div className="mt-5 grid gap-4 xl:grid-cols-12">
         <div className="xl:col-span-8">
+          <div className="mb-2.5">
+            <h2 className="text-[13px] font-semibold">Receipt register</h2>
+            <p className="text-[10.5px] text-muted-foreground">
+              Confirmed payment receipts issued to tenants. Open a row to preview the receipt.
+            </p>
+          </div>
           <DataTable
             data={receipts}
             columns={columns}
@@ -323,7 +329,13 @@ export function ReceiptsWorkspace() {
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Invoice audit</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Track rental invoices and record missing external EBM references where needed.
+          </p>
+        </div>
         <SectionCard
           title="Invoice document audit"
           description="Rental invoices issued, with fiscal reference status"

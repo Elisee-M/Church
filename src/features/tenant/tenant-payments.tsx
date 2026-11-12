@@ -208,7 +208,13 @@ export function TenantPayments() {
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Payment history</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Confirmed payments include receipts. Pending bank transfers update after verification.
+          </p>
+        </div>
         <DataTable
           data={filtered}
           columns={columns}

@@ -234,7 +234,13 @@ export function TenantInvoices() {
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Invoice history</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Open an invoice to view line items, payments, and the rental document.
+          </p>
+        </div>
         {summary.invoices.length === 0 ? (
           <div className="rounded-xl border border-border bg-card shadow-soft">
             <EmptyState

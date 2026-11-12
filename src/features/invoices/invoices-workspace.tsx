@@ -257,7 +257,13 @@ export function InvoicesWorkspace({
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Invoice register</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Review each invoice, record payments, and keep EBM references separate from rental documents.
+          </p>
+        </div>
         <DataTable
           data={filtered}
           columns={columns}

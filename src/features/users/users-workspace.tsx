@@ -234,7 +234,13 @@ export function UsersWorkspace() {
         />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-5">
+        <div className="mb-2.5">
+          <h2 className="text-[13px] font-semibold">Team directory</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Manage roles, invitations, and access for administrators, accountants, and staff.
+          </p>
+        </div>
         <DataTable
           data={filtered}
           columns={columns}
