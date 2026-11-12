@@ -205,7 +205,21 @@ export function PropertiesWorkspace() {
         <StatCard label="Monthly rent potential" value={formatCurrency(metrics.potential, true)} hint="Across all spaces" icon={SlidersHorizontal} tone="default" />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+      <div className="mt-5 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-[13px] font-semibold">Buildings overview</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Select a building card to filter spaces, or add spaces from the building menu.
+          </p>
+        </div>
+        {buildingFilter !== "all" && (
+          <Button variant="ghost" size="sm" className="h-7 text-[11px]" onClick={() => setBuildingFilter("all")}>
+            Show all buildings
+          </Button>
+        )}
+      </div>
+
+      <div className="mt-2.5 grid gap-4 lg:grid-cols-3">
         {db.buildings.map((building) => {
           const spaces = db.spaces.filter((space) => space.buildingId === building.id);
           const occupied = spaces.filter((space) => space.status === "occupied").length;
@@ -285,7 +299,16 @@ export function PropertiesWorkspace() {
         </button>
       </div>
 
-      <div className="mt-5 flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3 shadow-soft lg:flex-row lg:items-center">
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-[13px] font-semibold">Space inventory</h2>
+          <p className="text-[10.5px] text-muted-foreground">
+            Browse every rentable unit, update status, and open details to view history or the assigned tenant.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-2.5 flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3 shadow-soft lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -360,7 +383,7 @@ export function PropertiesWorkspace() {
         </div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-2.5 flex items-center justify-between">
         <p className="text-[11px] text-muted-foreground">
           {filtered.length} space{filtered.length === 1 ? "" : "s"}
           {buildingFilter !== "all" && ` in ${db.buildings.find((building) => building.id === buildingFilter)?.name}`}
