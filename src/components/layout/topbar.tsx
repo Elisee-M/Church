@@ -3,11 +3,11 @@
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import type { Role } from "@/types";
-import { DEMO_USER } from "@/lib/constants";
+
 import { findActiveItem } from "@/lib/navigation";
 import { useTranslation } from "@/lib/providers/locale-provider";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { CommandSearch } from "./command-search";
 import { LanguageSwitcher } from "./language-switcher";
 import { NotificationsMenu } from "./notifications-menu";
@@ -37,7 +37,7 @@ export function Topbar({ role, onMenu }: { role: Role; onMenu: () => void }) {
             <span className="truncate text-muted-foreground">{active ? t(active.titleKey) : "Genzura"}</span>
           </div>
           <h1 className="truncate font-display text-[15px] font-semibold leading-tight sm:text-base">
-            {active ? t(active.titleKey) : DEMO_USER[role].title}
+            {active ? t(active.titleKey) : roleLabel}
           </h1>
         </div>
 
@@ -56,9 +56,8 @@ export function Topbar({ role, onMenu }: { role: Role; onMenu: () => void }) {
         </div>
       </div>
       <div className="flex items-center gap-2 border-t border-border/60 px-4 py-1.5 md:hidden">
-        <Badge variant="warning" className="text-[9px]">Demo</Badge>
-        <span className="text-[10px] text-muted-foreground">{DEMO_USER[role].email}</span>
-        <div className="ml-auto md:hidden">
+        <span className="text-[10px] text-muted-foreground">{roleLabel}</span>
+        <div className="ml-auto">
           <CommandSearch />
         </div>
       </div>

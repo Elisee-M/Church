@@ -69,7 +69,7 @@ export function generateMonthlyInvoices(period: string) {
         type: "invoice",
         title: "Monthly invoices generated",
         description: `${generated} invoices were generated for ${period}.`,
-        actor: "Claudine Uwimana",
+        actor: "Administrator",
       });
     }
   });
@@ -104,7 +104,7 @@ export function recordEbmReference(
       type: "invoice",
       title: "EBM reference recorded",
       description: `${reference} was recorded against ${invoice.number}. This is a reference to the church's EBM solution, not a generated fiscal document.`,
-      actor: "Eric Mugisha",
+      actor: "Accountant",
     });
   });
 }

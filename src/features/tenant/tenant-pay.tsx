@@ -18,7 +18,7 @@ import {
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
-import { DEMO_TENANT_ID } from "@/lib/constants";
+
 import { formatCurrency, formatDate, monthLabel } from "@/lib/utils";
 import { getTenantSummary, invoiceBalance } from "@/lib/mock-data/analytics";
 import { simulateMobileMoneyPayment, submitBankTransferProof } from "@/lib/services";
@@ -52,7 +52,8 @@ export function TenantPay() {
   const ready = usePageReady();
   const searchParams = useSearchParams();
   const requestedInvoice = searchParams.get("invoice");
-  const summary = getTenantSummary(db, DEMO_TENANT_ID);
+  const tenantId = db.tenants[0]?.id ?? "";
+  const summary = getTenantSummary(db, tenantId);
   const openInvoices = summary.invoices.filter((invoice) => invoiceBalance(invoice) > 0);
   const defaultInvoiceId =
     openInvoices.find((invoice) => invoice.id === requestedInvoice)?.id ??

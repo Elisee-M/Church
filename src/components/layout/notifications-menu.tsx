@@ -11,7 +11,7 @@ import {
   Settings2,
 } from "lucide-react";
 import type { NotificationType } from "@/types";
-import { DEMO_TENANT_ID } from "@/lib/constants";
+
 import { formatDateTime, cn } from "@/lib/utils";
 import { useDatabase } from "@/hooks/use-database";
 import { markNotificationRead, markNotificationsRead } from "@/lib/services";
@@ -37,7 +37,7 @@ export function NotificationsMenu() {
   const db = useDatabase();
   const isTenant = pathname.startsWith("/tenant");
   const notifications = db.notifications
-    .filter((notification) => (isTenant ? notification.tenantId === DEMO_TENANT_ID : !notification.tenantId))
+    .filter((notification) => (isTenant ? notification.tenantId === (db.tenants[0]?.id ?? "") : !notification.tenantId))
     .slice(0, 8);
   const unread = notifications.filter((notification) => !notification.read).length;
 
@@ -65,7 +65,7 @@ export function NotificationsMenu() {
           </div>
           {unread > 0 && (
             <button
-              onClick={() => markNotificationsRead(isTenant ? DEMO_TENANT_ID : undefined)}
+              onClick={() => markNotificationsRead(isTenant ? db.tenants[0]?.id : undefined)}
               className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline dark:text-foreground"
             >
               <CheckCheck className="size-3.5" /> Mark all read

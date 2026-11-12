@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Payment } from "@/types";
-import { DEMO_TENANT_ID, PAYMENT_METHOD_SHORT, PAYMENT_STATUS_LABELS } from "@/lib/constants";
+import { PAYMENT_METHOD_SHORT, PAYMENT_STATUS_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { getTenantSummary } from "@/lib/mock-data/analytics";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
@@ -46,7 +46,8 @@ export function TenantPayments() {
   const ready = usePageReady();
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [receipt, setReceipt] = React.useState<Payment | null>(null);
-  const summary = getTenantSummary(db, DEMO_TENANT_ID);
+  const tenantId = db.tenants[0]?.id ?? "";
+  const summary = getTenantSummary(db, tenantId);
   const tenant = summary.tenant;
 
   const payments = summary.payments;
@@ -152,7 +153,7 @@ export function TenantPayments() {
     return (
       <PageHeader
         title="Tenant profile not found"
-        description="The demo tenant record is missing. Reset the demo data from the profile menu."
+        description="No tenant account is available yet."
       />
     );
   }

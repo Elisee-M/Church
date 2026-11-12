@@ -19,7 +19,7 @@ export function updateSettings(patch: Partial<AppSettings>) {
       type: "system",
       title: "Settings updated",
       description: "Organization or financial configuration was updated.",
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }

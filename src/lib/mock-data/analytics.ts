@@ -1,54 +1,6 @@
 import type { Database, Invoice, InvoiceStatus, Payment } from "@/types";
 
-export const HISTORY_MONTHS = [
-  "2026-01",
-  "2026-02",
-  "2026-03",
-  "2026-04",
-  "2026-05",
-  "2026-06",
-  "2026-07",
-  "2026-08",
-  "2026-09",
-  "2026-10",
-  "2026-11",
-] as const;
-
-const HISTORICAL_EXPECTED: Record<string, number> = {
-  "2026-01": 7_600_000,
-  "2026-02": 7_600_000,
-  "2026-03": 7_950_000,
-  "2026-04": 7_950_000,
-  "2026-05": 8_300_000,
-  "2026-06": 8_300_000,
-  "2026-07": 8_300_000,
-  "2026-08": 8_450_000,
-  "2026-09": 8_850_000,
-  "2026-10": 8_850_000,
-  "2026-11": 8_850_000,
-};
-
-const HISTORICAL_COLLECTED: Record<string, number> = {
-  "2026-01": 7_100_000,
-  "2026-02": 7_410_000,
-  "2026-03": 7_300_000,
-  "2026-04": 7_700_000,
-  "2026-05": 7_850_000,
-  "2026-06": 8_050_000,
-  "2026-07": 7_980_000,
-  "2026-08": 8_210_000,
-};
-
-const HISTORICAL_EXPENSES: Record<string, number> = {
-  "2026-01": 320_000,
-  "2026-02": 280_000,
-  "2026-03": 1_250_000,
-  "2026-04": 410_000,
-  "2026-05": 380_000,
-  "2026-06": 590_000,
-  "2026-07": 490_000,
-  "2026-08": 760_000,
-};
+export const HISTORY_MONTHS: string[] = [];
 
 export const APP_TODAY = new Date();
 
@@ -77,7 +29,8 @@ export function getDashboardMetrics(db: Database) {
     (agreement) => agreement.status === "active" || agreement.status === "expiring",
   );
   const expectedMonthly = activeAgreements.reduce(
-    (sum, agreement) => sum + agreement.lineItems.reduce((lineSum, line) => lineSum + line.monthlyRent, 0),
+    (sum, agreement) =>
+      sum + agreement.lineItems.reduce((lineSum, line) => lineSum + line.monthlyRent, 0),
     0,
   );
   const month = currentMonthKey();
@@ -110,27 +63,29 @@ export function getDashboardMetrics(db: Database) {
 }
 
 export function getMonthlyFinancials(db: Database) {
-  return HISTORY_MONTHS.map((month) => {
-    const computedCollected = db.payments
+  const months = Array.from(
+    new Set([
+      ...db.invoices.map((invoice) => invoice.period),
+      ...db.payments.map((payment) => payment.date.slice(0, 7)),
+      ...db.expenses.map((expense) => expense.date.slice(0, 7)),
+    ]),
+  )
+    .filter(Boolean)
+    .sort();
+  return months.map((month) => {
+    const expected = db.invoices
+      .filter((invoice) => invoice.period === month)
+      .reduce((sum, invoice) => sum + invoice.amount, 0);
+    const collected = db.payments
       .filter((payment) => payment.status === "completed" && payment.date.startsWith(month))
       .reduce((sum, payment) => sum + payment.amount, 0);
-    const computedExpenses = db.expenses
+    const expenses = db.expenses
       .filter((expense) => expense.date.startsWith(month))
       .reduce((sum, expense) => sum + expense.amount, 0);
-    const isComputedMonth = month >= "2026-09";
     const label = new Intl.DateTimeFormat("en-GB", { month: "short" }).format(
       new Date(`${month}-01T00:00:00`),
     );
-    return {
-      month,
-      label,
-      expected: HISTORICAL_EXPECTED[month] ?? 0,
-      collected: isComputedMonth ? computedCollected : (HISTORICAL_COLLECTED[month] ?? 0),
-      expenses:
-        isComputedMonth
-          ? computedExpenses
-          : computedExpenses || (HISTORICAL_EXPENSES[month] ?? 0),
-    };
+    return { month, label, expected, collected, expenses };
   });
 }
 
@@ -141,7 +96,9 @@ export function getTenantSummary(db: Database, tenantId: string) {
       item.tenantId === tenantId && (item.status === "active" || item.status === "expiring"),
   );
   const tenantAgreements = db.agreements.filter((item) => item.tenantId === tenantId);
-  const spaceIds = new Set(tenantAgreements.flatMap((item) => item.lineItems.map((line) => line.spaceId)));
+  const spaceIds = new Set(
+    tenantAgreements.flatMap((item) => item.lineItems.map((line) => line.spaceId)),
+  );
   const spaces = db.spaces.filter((space) => spaceIds.has(space.id) || space.tenantId === tenantId);
   const invoices = db.invoices
     .filter((invoice) => invoice.tenantId === tenantId)

@@ -353,7 +353,7 @@ export function InvoicesWorkspace({
       {paymentInvoice !== null && (
         <RecordPaymentDialog
           defaultInvoiceId={paymentInvoice || undefined}
-          actor={mode === "accountant" ? "Eric Mugisha" : "Claudine Uwimana"}
+          actor={mode === "accountant" ? "Accountant" : "Administrator"}
           onClose={() => setPaymentInvoice(null)}
         />
       )}

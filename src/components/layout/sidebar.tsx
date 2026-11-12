@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { ChevronsLeft, ChevronsRight, CircleDot } from "lucide-react";
 import type { Role } from "@/types";
 import { cn } from "@/lib/utils";
-import { DEMO_TENANT_ID } from "@/lib/constants";
+
 import { navForRole } from "@/lib/navigation";
 import { useTranslation } from "@/lib/providers/locale-provider";
 import { useDatabase } from "@/hooks/use-database";
@@ -27,17 +27,18 @@ export function Sidebar({ role, collapsed, mobile, onToggle, onNavigate }: Sideb
   const { t } = useTranslation();
   const groups = navForRole(role);
 
+  const currentTenantId = db.tenants[0]?.id ?? "";
   const badgeCounts = {
     overdueInvoices: db.invoices.filter(
       (invoice) =>
-        (role === "tenant" ? invoice.tenantId === DEMO_TENANT_ID : true) &&
+        (role === "tenant" ? invoice.tenantId === currentTenantId : true) &&
         invoice.status === "overdue" &&
         invoiceBalance(invoice) > 0,
     ).length,
     pendingVerifications: db.payments.filter((payment) => payment.verification === "pending").length,
     tenantInvoices: db.invoices.filter(
       (invoice) =>
-        invoice.tenantId === DEMO_TENANT_ID &&
+        invoice.tenantId === currentTenantId &&
         invoiceBalance(invoice) > 0,
     ).length,
   };

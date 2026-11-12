@@ -375,7 +375,7 @@ export function PaymentsWorkspace({
 
       {recordOpen && (
         <RecordPaymentDialog
-          actor={mode === "accountant" ? "Eric Mugisha" : "Claudine Uwimana"}
+          actor={mode === "accountant" ? "Accountant" : "Administrator"}
           onClose={() => setRecordOpen(false)}
         />
       )}

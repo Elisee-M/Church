@@ -4,7 +4,7 @@ import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRight, Check, FlaskConical } from "lucide-react";
 import type { Role } from "@/types";
-import { DEMO_USER, ROLE_HOME } from "@/lib/constants";
+import { ROLE_HOME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/providers/locale-provider";
 import {
@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 const ROLES: { role: Role; labelKey: string; description: string }[] = [
   { role: "admin", labelKey: "roles.adminPortal", description: "Full property & finance access" },
   { role: "accountant", labelKey: "roles.accountantPortal", description: "Verification & financial control" },
-  { role: "tenant", labelKey: "roles.tenantPortal", description: "Self-service for Aline Uwase" },
+  { role: "tenant", labelKey: "roles.tenantPortal", description: "Tenant self-service portal" },
 ];
 
 export function currentRole(pathname: string): Role {
@@ -39,18 +39,17 @@ export function RoleSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="hidden items-center gap-2 rounded-full border border-border bg-card py-1 pl-2 pr-2.5 text-xs font-medium text-muted-foreground shadow-sm transition hover:bg-accent sm:flex">
-          <span className="flex items-center gap-1 rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning">
+          <span className="flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             <FlaskConical className="size-3" />
-            Demo
+            Portal
           </span>
           <span className="text-foreground">{t(ROLES.find((item) => item.role === role)?.labelKey ?? "roles.admin")}</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuLabel>Demo role switcher</DropdownMenuLabel>
+        <DropdownMenuLabel>Switch portal</DropdownMenuLabel>
         <p className="px-2.5 pb-2 text-xs leading-relaxed text-muted-foreground">
-          Test every portal without authentication. This switch is development-only and is isolated
-          from future Supabase auth.
+          Switch between portals during development. This is isolated from future authentication.
         </p>
         <DropdownMenuSeparator />
         {ROLES.map((item) => (
@@ -77,8 +76,7 @@ export function RoleSwitcher() {
         ))}
         <DropdownMenuSeparator />
         <div className="flex items-center gap-2 px-2.5 py-1.5">
-          <Badge variant="warning">Frontend only</Badge>
-          <span className="text-[11px] text-muted-foreground">{DEMO_USER[role].email}</span>
+          <Badge variant="secondary">Development</Badge>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, RotateCcw, Settings, UserRound } from "lucide-react";
 import { toast } from "sonner";
-import { DEMO_USER, ROLE_HOME } from "@/lib/constants";
+import { ROLE_HOME } from "@/lib/constants";
 import { initials } from "@/lib/utils";
 import { resetDatabase } from "@/lib/services";
 import { currentRole } from "./role-switcher";
@@ -17,11 +17,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Administrator",
+  accountant: "Accountant",
+  tenant: "Tenant",
+};
+
 export function UserMenu() {
   const pathname = usePathname();
   const router = useRouter();
   const role = currentRole(pathname);
-  const user = DEMO_USER[role];
+  const user = { name: ROLE_LABEL[role] ?? "User", email: "", title: ROLE_LABEL[role] ?? "User" };
 
   return (
     <DropdownMenu>
@@ -55,13 +61,13 @@ export function UserMenu() {
         <DropdownMenuItem
           onClick={() => {
             resetDatabase();
-            toast.success("Demo data reset", {
-              description: "All mock invoices, payments and records are back to the seeded state.",
+            toast.success("Data reset", {
+              description: "The in-memory database has been cleared.",
             });
           }}
         >
           <RotateCcw />
-          Reset demo data
+          Reset data
         </DropdownMenuItem>
         <DropdownMenuItem
           variant="destructive"

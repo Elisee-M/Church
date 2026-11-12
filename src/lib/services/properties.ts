@@ -39,7 +39,7 @@ export function addSpace(input: SpaceInput) {
       type: "system",
       title: "New space added",
       description: `${input.code} ${input.name} was added to the property portfolio.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
   return id;
@@ -64,7 +64,7 @@ export function updateSpaceStatus(
       type: "system",
       title: "Space status updated",
       description: `${space.code} is now ${status}.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }
@@ -88,7 +88,7 @@ export function updateBuilding(id: string, patch: Partial<BuildingInput>) {
       type: "system",
       title: "Building updated",
       description: `${building.name} details were updated.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }
@@ -109,7 +109,7 @@ export function addFloor(buildingId: string, name: string) {
       type: "system",
       title: "Floor added",
       description: `${name} was added to ${building.name}.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }
@@ -139,7 +139,7 @@ export function addBuilding(input: BuildingInput) {
       type: "system",
       title: "Building added",
       description: `${input.name} was added with ${input.floorsCount} floors.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
   return id;

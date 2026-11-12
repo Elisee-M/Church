@@ -23,13 +23,13 @@ export function createExpense(input: ExpenseInput) {
       id: newId("e"),
       reference: `EXP-${new Date().getFullYear()}-${String(sequence).padStart(4, "0")}`,
       ...input,
-      recordedBy: "Eric Mugisha",
+      recordedBy: "Accountant",
     });
     addActivity(db, {
       type: "expense",
       title: "Expense recorded",
       description: `${input.title} · RWF ${input.amount.toLocaleString("en-RW")} for ${db.buildings.find((building) => building.id === input.buildingId)?.name ?? "building"}.`,
-      actor: "Eric Mugisha",
+      actor: "Accountant",
     });
   });
 }
@@ -43,7 +43,7 @@ export function updateExpense(id: string, patch: Partial<ExpenseInput>) {
       type: "expense",
       title: "Expense updated",
       description: `${expense.title} was updated by the accountant.`,
-      actor: "Eric Mugisha",
+      actor: "Accountant",
     });
   });
 }
@@ -57,7 +57,7 @@ export function deleteExpense(id: string) {
       type: "expense",
       title: "Expense removed",
       description: `${expense.title} (${expense.reference}) was removed from the expense ledger.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }

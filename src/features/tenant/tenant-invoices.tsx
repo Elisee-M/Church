@@ -14,7 +14,7 @@ import {
   Wallet,
 } from "lucide-react";
 import type { Invoice } from "@/types";
-import { DEMO_TENANT_ID, INVOICE_STATUS_LABELS } from "@/lib/constants";
+import { INVOICE_STATUS_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatPercent, monthLabel } from "@/lib/utils";
 import {
   getTenantSummary,
@@ -49,7 +49,8 @@ export function TenantInvoices() {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [periodFilter, setPeriodFilter] = React.useState("all");
-  const summary = getTenantSummary(db, DEMO_TENANT_ID);
+  const tenantId = db.tenants[0]?.id ?? "";
+  const summary = getTenantSummary(db, tenantId);
   const tenant = summary.tenant;
 
   const periods = Array.from(new Set(summary.invoices.map((invoice) => invoice.period))).sort((a, b) =>
@@ -171,7 +172,7 @@ export function TenantInvoices() {
     return (
       <PageHeader
         title="Tenant profile not found"
-        description="The demo tenant record is missing. Reset the demo data from the profile menu."
+        description="No tenant account is available yet."
       />
     );
   }

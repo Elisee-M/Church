@@ -15,7 +15,7 @@ import {
   TrendingDown,
   Wallet,
 } from "lucide-react";
-import { DEMO_USER, PAYMENT_METHOD_SHORT } from "@/lib/constants";
+import { PAYMENT_METHOD_SHORT } from "@/lib/constants";
 import { formatCurrency, formatDate, formatPercent, initials } from "@/lib/utils";
 import {
   currentMonthKey,
@@ -83,7 +83,7 @@ export function AccountantDashboard() {
       <PageHeader
         title={`Financial control · ${formatDate(new Date(), "long")}`}
         badge={<Badge variant="navy">Accountant</Badge>}
-        description={`${DEMO_USER.accountant.name} · verify collections, reconcile channels and keep the rent ledger clean.`}
+        description="Verify collections, reconcile channels, and keep the rent ledger clean."
         actions={
           <>
             <Button variant="outline" size="sm" asChild>

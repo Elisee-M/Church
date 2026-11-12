@@ -13,7 +13,7 @@ import {
   TrendingUp,
   Wallet,
 } from "lucide-react";
-import { DEMO_USER, PAYMENT_METHOD_SHORT, INVOICE_STATUS_LABELS } from "@/lib/constants";
+import { PAYMENT_METHOD_SHORT, INVOICE_STATUS_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatPercent, initials, cn } from "@/lib/utils";
 import {
   getDashboardMetrics,
@@ -58,7 +58,7 @@ export function AdminDashboard() {
   if (!ready) {
     return (
       <>
-        <PageHeader title={`${greeting}, ${DEMO_USER.admin.name.split(" ")[0]}`} description="Loading your property overview…" />
+        <PageHeader title={greeting} description="Loading your property overview…" />
         <LoadingPanel />
       </>
     );
@@ -67,7 +67,7 @@ export function AdminDashboard() {
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title={`${greeting}, ${DEMO_USER.admin.name.split(" ")[0]}`}
+        title={greeting}
         description={`Here is what is happening across the church's property portfolio on ${formatDate(new Date(), "long")}.`}
         actions={
           <>

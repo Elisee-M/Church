@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
-import { DEMO_TENANT_ID, PAYMENT_METHOD_SHORT, SPACE_CATEGORY_LABELS } from "@/lib/constants";
+import { PAYMENT_METHOD_SHORT, SPACE_CATEGORY_LABELS } from "@/lib/constants";
 import { cn, formatCurrency, formatDate, formatPercent, daysBetween } from "@/lib/utils";
 import { getTenantSummary, invoiceBalance, todayISO } from "@/lib/mock-data/analytics";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
@@ -31,12 +31,13 @@ import { Badge } from "@/components/ui/badge";
 export function TenantDashboard() {
   const db = useDatabase();
   const ready = usePageReady();
-  const summary = getTenantSummary(db, DEMO_TENANT_ID);
+  const tenantId = db.tenants[0]?.id ?? "";
+  const summary = getTenantSummary(db, tenantId);
   const tenant = summary.tenant;
   const invoice = summary.currentInvoice;
   const daysToDue = invoice ? daysBetween(todayISO(), invoice.dueDate) : 0;
   const documents = db.documents
-    .filter((document) => document.tenantId === DEMO_TENANT_ID)
+    .filter((document) => document.tenantId === tenantId)
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
 
@@ -53,7 +54,7 @@ export function TenantDashboard() {
     return (
       <PageHeader
         title="Tenant profile not found"
-        description="The demo tenant record is missing. Reset the demo data from the profile menu."
+        description="No tenant account is available yet. Add a tenant in the admin portal to view this dashboard."
       />
     );
   }

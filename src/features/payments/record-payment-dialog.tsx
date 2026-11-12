@@ -30,7 +30,7 @@ import {
 
 export function RecordPaymentDialog({
   defaultInvoiceId,
-  actor = "Claudine Uwimana",
+  actor = "Administrator",
   onClose,
 }: {
   defaultInvoiceId?: string;

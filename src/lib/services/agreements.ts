@@ -76,7 +76,7 @@ export function createAgreement(input: AgreementInput) {
       type: "agreement",
       title: "Agreement created",
       description: `${agreement.reference} created for ${tenant?.name ?? "tenant"}.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
   return id;
@@ -118,7 +118,7 @@ export function updateAgreement(id: string, patch: Partial<AgreementInput>) {
       type: "agreement",
       title: "Agreement updated",
       description: `${agreement.reference} was updated.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }
@@ -146,7 +146,7 @@ export function terminateAgreement(id: string, reason: string) {
       type: "agreement",
       title: "Agreement terminated",
       description: `${agreement.reference} was terminated. Reason: ${reason}`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }
@@ -160,7 +160,7 @@ export function renewAgreement(id: string, newEndDate: string) {
       type: "agreement",
       title: "Agreement renewed",
       description: `${agreement.reference} now runs until ${newEndDate}.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }

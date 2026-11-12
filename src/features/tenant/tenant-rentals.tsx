@@ -16,7 +16,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { DEMO_TENANT_ID, SPACE_CATEGORY_LABELS } from "@/lib/constants";
+import { SPACE_CATEGORY_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { getTenantSummary } from "@/lib/mock-data/analytics";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
@@ -31,11 +31,12 @@ import { Separator } from "@/components/ui/separator";
 export function TenantRentals() {
   const db = useDatabase();
   const ready = usePageReady();
-  const summary = getTenantSummary(db, DEMO_TENANT_ID);
+  const tenantId = db.tenants[0]?.id ?? "";
+  const summary = getTenantSummary(db, tenantId);
   const tenant = summary.tenant;
   const activeAgreement = summary.agreement;
   const allAgreements = db.agreements
-    .filter((agreement) => agreement.tenantId === DEMO_TENANT_ID)
+    .filter((agreement) => agreement.tenantId === tenantId)
     .sort((a, b) => b.startDate.localeCompare(a.startDate));
 
   if (!ready) {
@@ -51,7 +52,7 @@ export function TenantRentals() {
     return (
       <PageHeader
         title="Tenant profile not found"
-        description="The demo tenant record is missing. Reset the demo data from the profile menu."
+        description="No tenant account is available yet."
       />
     );
   }

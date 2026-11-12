@@ -31,7 +31,7 @@ export function createTenant(input: TenantInput) {
       type: "tenant",
       title: "Tenant added",
       description: `${input.name} was added to the tenant directory.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
   return id;
@@ -46,7 +46,7 @@ export function updateTenant(id: string, patch: Partial<TenantInput>) {
       type: "tenant",
       title: "Tenant profile updated",
       description: `${tenant.name}'s details were updated.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }

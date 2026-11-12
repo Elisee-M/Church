@@ -359,7 +359,7 @@ export function InvoiceDetail({
       {payOpen && (
         <RecordPaymentDialog
           defaultInvoiceId={invoice.id}
-          actor={mode === "accountant" ? "Eric Mugisha" : "Claudine Uwimana"}
+          actor={mode === "accountant" ? "Accountant" : "Administrator"}
           onClose={() => setPayOpen(false)}
         />
       )}

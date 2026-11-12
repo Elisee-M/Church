@@ -32,7 +32,7 @@ export function BuildingFormDialog({
       name: building?.name ?? "",
       address: building?.address ?? "",
       district: building?.district ?? "Gasabo",
-      city: building?.city ?? "Kigali",
+      city: building?.city ?? "",
       floorsCount: building?.floorsCount ?? 3,
       yearBuilt: building?.yearBuilt ?? 2018,
       description: building?.description ?? "",
@@ -64,7 +64,7 @@ export function BuildingFormDialog({
         </DialogHeader>
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <Field label="Building name" htmlFor="building-name" error={form.formState.errors.name?.message}>
-            <Input id="building-name" placeholder="e.g. Genzura Plaza" {...form.register("name")} />
+            <Input id="building-name" placeholder="e.g. Building name" {...form.register("name")} />
           </Field>
           <Field label="Address" htmlFor="building-address" error={form.formState.errors.address?.message}>
             <Input id="building-address" placeholder="e.g. KN 3 Rd, Nyarugenge" {...form.register("address")} />

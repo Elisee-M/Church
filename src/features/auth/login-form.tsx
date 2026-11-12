@@ -12,9 +12,9 @@ import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+
 import { useTranslation } from "@/lib/providers/locale-provider";
-import { DEMO_USER, ROLE_HOME } from "@/lib/constants";
+import { ROLE_HOME } from "@/lib/constants";
 import type { Role } from "@/types";
 
 const loginSchema = z.object({
@@ -25,10 +25,10 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>;
 
-const PORTALS: { role: Role; label: string; email: string }[] = [
-  { role: "admin", label: "Administrator", email: DEMO_USER.admin.email },
-  { role: "accountant", label: "Accountant", email: DEMO_USER.accountant.email },
-  { role: "tenant", label: "Tenant", email: DEMO_USER.tenant.email },
+const PORTALS: { role: Role; label: string }[] = [
+  { role: "admin", label: "Administrator" },
+  { role: "accountant", label: "Accountant" },
+  { role: "tenant", label: "Tenant" },
 ];
 
 export function LoginForm() {
@@ -39,13 +39,13 @@ export function LoginForm() {
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "claudine@genzura.rw", password: "genzura-demo", remember: true },
+    defaultValues: { email: "", password: "", remember: true },
   });
 
   const onSubmit = form.handleSubmit(async () => {
     await new Promise((resolve) => setTimeout(resolve, 650));
-    toast.success("Welcome back to Genzura", {
-      description: "Signed in to the frontend demo. Role-based access is enforced by the future backend.",
+    toast.success("Signed in", {
+      description: "Authentication will be connected when the backend is added.",
     });
     router.push("/admin/dashboard");
   });
@@ -71,7 +71,6 @@ export function LoginForm() {
         <div className="mb-5">
           <div className="flex items-center gap-2">
             <h1 className="font-display text-xl font-semibold tracking-tight">{t("auth.welcomeBack")}</h1>
-            <Badge variant="warning">Demo</Badge>
           </div>
           <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
             {t("auth.signInSubtitle")}
@@ -151,9 +150,7 @@ export function LoginForm() {
               t("auth.signIn")
             )}
           </Button>
-          <p className="text-center text-[10.5px] leading-relaxed text-muted-foreground">
-            {t("auth.demoHint")}
-          </p>
+
         </form>
 
         <div className="my-5 flex items-center gap-3">

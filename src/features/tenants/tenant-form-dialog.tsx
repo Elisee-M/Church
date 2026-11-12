@@ -89,7 +89,7 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
               htmlFor="tenant-name"
               error={form.formState.errors.name?.message}
             >
-              <Input id="tenant-name" placeholder="e.g. Aline Uwase" {...form.register("name")} />
+              <Input id="tenant-name" placeholder="e.g. Tenant name" {...form.register("name")} />
             </Field>
           </div>
 

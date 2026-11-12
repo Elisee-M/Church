@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { AppDocument, DocumentType, Invoice, Payment } from "@/types";
-import { DEMO_TENANT_ID } from "@/lib/constants";
+
 import { formatDate } from "@/lib/utils";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
 import { PageHeader } from "@/components/shared/page-header";
@@ -69,9 +69,10 @@ export function TenantDocuments() {
     | { kind: "ebm"; invoice: Invoice }
     | null
   >(null);
-  const tenant = db.tenants.find((item) => item.id === DEMO_TENANT_ID);
+  const tenantId = db.tenants[0]?.id ?? "";
+  const tenant = db.tenants.find((item) => item.id === tenantId);
   const documents = db.documents
-    .filter((document) => document.tenantId === DEMO_TENANT_ID)
+    .filter((document) => document.tenantId === tenantId)
     .sort((a, b) => b.date.localeCompare(a.date));
 
   if (!ready) {

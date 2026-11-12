@@ -14,7 +14,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
-import { DEMO_TENANT_ID } from "@/lib/constants";
+
 import { tenantSchema, type TenantFormValues } from "@/lib/validations/schemas";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { getTenantSummary } from "@/lib/mock-data/analytics";
@@ -32,7 +32,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 export function TenantProfile() {
   const db = useDatabase();
   const ready = usePageReady();
-  const summary = getTenantSummary(db, DEMO_TENANT_ID);
+  const tenantId = db.tenants[0]?.id ?? "";
+  const summary = getTenantSummary(db, tenantId);
   const tenant = summary.tenant;
 
   const form = useForm<TenantFormValues>({
@@ -73,7 +74,7 @@ export function TenantProfile() {
     return (
       <PageHeader
         title="Tenant profile not found"
-        description="The demo tenant record is missing. Reset the demo data from the profile menu."
+        description="No tenant account is available yet."
       />
     );
   }

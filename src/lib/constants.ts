@@ -128,9 +128,4 @@ export const ROLE_HOME: Record<string, string> = {
   tenant: "/tenant/dashboard",
 };
 
-export const DEMO_TENANT_ID = "t9";
-export const DEMO_USER = {
-  admin: { name: "Claudine Uwimana", email: "claudine@genzura.rw", title: "Church Administrator" },
-  accountant: { name: "Eric Mugisha", email: "eric@genzura.rw", title: "Accountant" },
-  tenant: { name: "Aline Uwase", email: "aline.uwase@gmail.com", title: "Tenant · Genzura Plaza" },
-} as const;
+

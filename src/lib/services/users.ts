@@ -32,7 +32,7 @@ export function inviteUser(input: UserInput) {
       type: "system",
       title: "User invited",
       description: `${input.name} was invited as ${input.role}.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }
@@ -47,7 +47,7 @@ export function updateUser(id: string, patch: Partial<Pick<SystemUser, "role" | 
       type: "system",
       title: "User access updated",
       description: `${user.name}'s account was updated.`,
-      actor: "Claudine Uwimana",
+      actor: "Administrator",
     });
   });
 }

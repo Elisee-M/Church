@@ -68,7 +68,7 @@ export function recordPayment(input: RecordPaymentInput) {
       proofName: input.proofName,
       notes: input.notes,
       ebmReference: input.ebmReference,
-      verifiedBy: status === "completed" ? (input.actor ?? "Eric Mugisha") : undefined,
+      verifiedBy: status === "completed" ? (input.actor ?? "Accountant") : undefined,
       verifiedAt: status === "completed" ? date : undefined,
       createdAt: new Date().toISOString(),
     };
@@ -79,7 +79,7 @@ export function recordPayment(input: RecordPaymentInput) {
       type: "payment",
       title: status === "completed" ? "Payment recorded" : "Payment awaiting verification",
       description: `${tenant?.name ?? "Tenant"} · RWF ${Math.round(input.amount).toLocaleString("en-RW")} via ${input.method.replaceAll("_", " ")}.`,
-      actor: input.actor ?? "Eric Mugisha",
+      actor: input.actor ?? "Accountant",
     });
     notify(db, {
       title: status === "completed" ? "Payment recorded" : "Payment submitted for verification",
@@ -106,7 +106,7 @@ export function verifyPayment(
     if (decision === "approve") {
       payment.verification = "verified";
       payment.status = "completed";
-      payment.verifiedBy = "Eric Mugisha";
+      payment.verifiedBy = "Accountant";
       payment.verifiedAt = timestamp;
       recalculateInvoice(db, payment.invoiceId);
       notify(db, {
@@ -119,7 +119,7 @@ export function verifyPayment(
         type: "payment",
         title: "Bank transfer verified",
         description: `${tenant?.name ?? "Tenant"} · ${payment.reference} approved for RWF ${payment.amount.toLocaleString("en-RW")}.`,
-        actor: "Eric Mugisha",
+        actor: "Accountant",
       });
     } else {
       payment.verification = "rejected";
@@ -135,7 +135,7 @@ export function verifyPayment(
         type: "payment",
         title: "Bank transfer rejected",
         description: `${payment.reference} was rejected. Reason: ${reason || "not supplied"}.`,
-        actor: "Eric Mugisha",
+        actor: "Accountant",
       });
     }
     if (payment.invoiceId) recalculateInvoice(db, payment.invoiceId);
@@ -159,7 +159,7 @@ export function reversePayment(paymentId: string, reason: string) {
       status: "completed",
       verification: "verified",
       date: new Date().toISOString(),
-      verifiedBy: "Eric Mugisha",
+      verifiedBy: "Accountant",
       verifiedAt: new Date().toISOString(),
       notes: `Reversal of ${source.reference}. Reason: ${reason}`,
       createdAt: new Date().toISOString(),
@@ -169,7 +169,7 @@ export function reversePayment(paymentId: string, reason: string) {
       type: "payment",
       title: "Payment correction recorded",
       description: `Reversal of ${source.reference}. Reason: ${reason}`,
-      actor: "Eric Mugisha",
+      actor: "Accountant",
     });
   });
 }
