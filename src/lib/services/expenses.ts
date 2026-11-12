@@ -47,3 +47,17 @@ export function updateExpense(id: string, patch: Partial<ExpenseInput>) {
     });
   });
 }
+
+export function deleteExpense(id: string) {
+  mutateDatabase((db) => {
+    const index = db.expenses.findIndex((item) => item.id === id);
+    if (index === -1) return;
+    const [expense] = db.expenses.splice(index, 1);
+    addActivity(db, {
+      type: "expense",
+      title: "Expense removed",
+      description: `${expense.title} (${expense.reference}) was removed from the expense ledger.`,
+      actor: "Claudine Uwimana",
+    });
+  });
+}
