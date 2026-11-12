@@ -103,6 +103,13 @@ export function InvoiceDetail({
             <Button variant="outline" size="sm" onClick={() => window.print()}>
               <Printer className="size-3.5" /> Print
             </Button>
+            {mode === "tenant" && balance > 0 && (
+              <Button size="sm" asChild>
+                <Link href={`/tenant/pay?invoice=${invoice.id}`}>
+                  <Wallet className="size-3.5" /> Pay now
+                </Link>
+              </Button>
+            )}
             {canRecord && (
               <Button size="sm" onClick={() => setPayOpen(true)}>
                 <Wallet className="size-3.5" /> Record payment
