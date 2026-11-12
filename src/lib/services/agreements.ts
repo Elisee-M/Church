@@ -123,6 +123,34 @@ export function updateAgreement(id: string, patch: Partial<AgreementInput>) {
   });
 }
 
+export function terminateAgreement(id: string, reason: string) {
+  mutateDatabase((db) => {
+    const agreement = db.agreements.find((item) => item.id === id);
+    if (!agreement) return;
+    agreement.status = "terminated";
+    agreement.endDate = new Date().toISOString().slice(0, 10);
+    agreement.lineItems.forEach((line) => {
+      const space = db.spaces.find((item) => item.id === line.spaceId);
+      if (space) {
+        space.tenantId = undefined;
+        space.status = "vacant";
+        space.history.unshift({
+          id: `${space.id}-${Date.now()}`,
+          date: new Date().toISOString().slice(0, 10),
+          event: "Agreement terminated",
+          description: `${agreement.reference} was terminated. Reason: ${reason}. The space is now vacant.`,
+        });
+      }
+    });
+    addActivity(db, {
+      type: "agreement",
+      title: "Agreement terminated",
+      description: `${agreement.reference} was terminated. Reason: ${reason}`,
+      actor: "Claudine Uwimana",
+    });
+  });
+}
+
 export function renewAgreement(id: string, newEndDate: string) {
   updateAgreement(id, { endDate: newEndDate });
   mutateDatabase((db) => {
