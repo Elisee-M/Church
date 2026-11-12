@@ -11,21 +11,22 @@ export type UserInput = {
   role: SystemUserRole;
 };
 
+const ROLE_PERMISSIONS: Record<SystemUserRole, string[]> = {
+  Administrator: ["Full system access", "Financial approvals", "User management"],
+  Accountant: ["Payments", "Expenses", "Invoices", "Reports"],
+  Tenant: ["Own rentals", "Own invoices", "Pay rent"],
+  "Property Manager": ["Buildings", "Spaces", "Agreements", "Tenants"],
+  Viewer: ["Read-only reports"],
+};
+
 export function inviteUser(input: UserInput) {
   mutateDatabase((db) => {
-    const permissions: Record<SystemUserRole, string[]> = {
-      Administrator: ["Full system access", "Financial approvals", "User management"],
-      Accountant: ["Payments", "Expenses", "Invoices", "Reports"],
-      Tenant: ["Own rentals", "Own invoices", "Pay rent"],
-      "Property Manager": ["Buildings", "Spaces", "Agreements", "Tenants"],
-      Viewer: ["Read-only reports"],
-    };
     db.users.unshift({
       id: newId("u"),
       ...input,
       status: "invited",
       lastActive: "—",
-      permissions: permissions[input.role],
+      permissions: ROLE_PERMISSIONS[input.role],
     });
     addActivity(db, {
       type: "system",
@@ -41,6 +42,7 @@ export function updateUser(id: string, patch: Partial<Pick<SystemUser, "role" | 
     const user = db.users.find((item) => item.id === id);
     if (!user) return;
     Object.assign(user, patch);
+    if (patch.role) user.permissions = ROLE_PERMISSIONS[patch.role];
     addActivity(db, {
       type: "system",
       title: "User access updated",
