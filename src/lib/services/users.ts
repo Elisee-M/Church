@@ -3,6 +3,7 @@
 import type { SystemUserRole } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import { refreshDatabase } from "./store";
+import { inviteUserAction } from "@/lib/actions/admin-users";
 
 export type UserInput = {
   name: string;
@@ -18,12 +19,9 @@ function dbRole(role: SystemUserRole): "admin" | "accountant" | "tenant" | null 
   return null; // Property Manager / Viewer not modeled in DB roles enum; skip role assignment
 }
 
-export async function inviteUser(_input: UserInput) { void _input;
-  // Provisioning/invites require admin API and server-side workflow (service role) per security rules.
-  // Not performed from client. UI should call a secure server action/route when implemented.
-  throw new Error(
-    "User provisioning must be performed via a secure server-side admin workflow. (Not available from the client.)",
-  );
+export async function inviteUser(input: UserInput) {
+  await inviteUserAction(input);
+  await refreshDatabase();
 }
 
 export async function updateUser(id: string, patch: Partial<Pick<{ role: SystemUserRole; status: string }, "role" | "status">>) {

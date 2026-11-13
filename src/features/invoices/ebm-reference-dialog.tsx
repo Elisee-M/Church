@@ -2,10 +2,12 @@
 
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as React from "react";
 import { FileBadge, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Invoice } from "@/types";
 import { recordEbmReference } from "@/lib/services";
+import { buildDocumentPath, uploadDocument } from "@/lib/storage/documents";
 import { ebmSchema, type EbmFormValues } from "@/lib/validations/schemas";
 import { Field } from "@/components/shared/form-field";
 import {
@@ -27,6 +29,7 @@ export function EbmReferenceDialog({
   invoice: Invoice;
   onClose: () => void;
 }) {
+  const [file, setFile] = React.useState<File | null>(null);
   const form = useForm<EbmFormValues>({
     resolver: zodResolver(ebmSchema),
     defaultValues: {
@@ -38,12 +41,28 @@ export function EbmReferenceDialog({
   const attachDocument = useWatch({ control: form.control, name: "attachDocument" });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    recordEbmReference(invoice.id, values.reference, values.attachDocument, values.documentName);
-    toast.success("EBM reference saved", {
-      description:
-        "Only the reference to the externally issued fiscal invoice is stored — Genzura never generates an EBM invoice.",
-    });
-    onClose();
+    try {
+      let documentPath;
+      if (values.attachDocument && file) {
+        const path = buildDocumentPath(["ebm", invoice.tenantId, invoice.id], file.name);
+        const uploaded = await uploadDocument({ bucket: "ebm-documents", path, file });
+        documentPath = uploaded.path;
+      }
+      await recordEbmReference(
+        invoice.id,
+        values.reference,
+        values.attachDocument,
+        file?.name || values.documentName,
+        documentPath,
+      );
+      toast.success("EBM reference saved", {
+        description:
+          "Only the reference to the externally issued fiscal invoice is stored. Genzura never generates an EBM invoice.",
+      });
+      onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save EBM reference.");
+    }
   });
 
   return (
@@ -94,12 +113,17 @@ export function EbmReferenceDialog({
             {attachDocument && (
               <div className="mt-3 space-y-1.5">
                 <Input
-                  placeholder="e.g. EBM-invoice-88213.pdf"
+                  type="file"
+                  accept=".pdf,image/*"
                   className="h-8 text-[11px]"
-                  {...form.register("documentName")}
+                  onChange={(event) => {
+                    const f = event.target.files?.[0] ?? null;
+                    setFile(f);
+                    form.setValue("documentName", f?.name ?? "");
+                  }}
                 />
                 <p className="text-[9.5px] text-muted-foreground">
-                  Demo only: the file name is stored with a simulated attachment.
+                  Upload the official fiscal invoice document (stored privately in Supabase Storage).
                 </p>
               </div>
             )}

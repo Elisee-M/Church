@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { formatCurrency, formatDate, monthLabel } from "@/lib/utils";
 import { getTenantSummary, invoiceBalance } from "@/lib/mock-data/analytics";
 import { simulateMobileMoneyPayment, submitBankTransferProof } from "@/lib/services";
+import { buildDocumentPath, uploadDocument } from "@/lib/storage/documents";
 import {
   bankProofSchema,
   momoPaymentSchema,
@@ -67,6 +68,7 @@ export function TenantPay() {
   const [momoReference, setMomoReference] = React.useState<string | null>(null);
   const [lastMomoOutcome, setLastMomoOutcome] = React.useState<"success" | "failed" | null>(null);
   const [bankSubmitted, setBankSubmitted] = React.useState(false);
+  const [proofFile, setProofFile] = React.useState<File | null>(null);
 
   const invoice = summary.invoices.find((item) => item.id === invoiceId) ?? openInvoices[0];
   const balance = invoice ? invoiceBalance(invoice) : 0;
@@ -163,18 +165,28 @@ export function TenantPay() {
   const submitBank = bankForm.handleSubmit(async (values) => {
     if (!invoice) return;
     try {
+      let proofPath: string | undefined;
+      if (proofFile) {
+        const path = buildDocumentPath(
+          ["tenants", invoice.tenantId, "payment-proofs", invoice.id],
+          proofFile.name,
+        );
+        const uploaded = await uploadDocument({ bucket: "payment-proofs", path, file: proofFile });
+        proofPath = uploaded.path;
+      }
       await submitBankTransferProof({
-      invoiceId: invoice.id,
-      amount: values.amount,
-      bankName: values.bankName,
-      reference: values.reference,
-      proofName: values.proofName || "transfer-proof.pdf",
-    });
-    setBankSubmitted(true);
-    toast.success("Proof submitted", {
-      description:
-        "Your transfer is awaiting accountant verification and is not counted as collected yet.",
-    });
+        invoiceId: invoice.id,
+        amount: values.amount,
+        bankName: values.bankName,
+        reference: values.reference,
+        proofName: proofFile?.name || values.proofName || "transfer-proof.pdf",
+        proofPath,
+      });
+      setBankSubmitted(true);
+      toast.success("Proof submitted", {
+        description:
+          "Your transfer is awaiting accountant verification and is not counted as collected yet.",
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not submit proof.");
     }
@@ -453,15 +465,17 @@ export function TenantPay() {
                       <Input id="bank-ref" placeholder="e.g. BK-TRF-008821" {...bankForm.register("reference")} />
                     </Field>
 
-                    <Field label="Proof of payment" htmlFor="bank-proof" error={bankForm.formState.errors.proofName?.message} hint="Upload a screenshot or PDF of the transfer confirmation (simulated).">
+                    <Field label="Proof of payment" htmlFor="bank-proof" error={bankForm.formState.errors.proofName?.message} hint="Upload a screenshot or PDF of the transfer confirmation.">
                       <div className="relative">
                         <Upload className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           id="bank-proof"
                           type="file"
+                          accept=".pdf,image/*"
                           className="pl-8 file:mr-2 file:border-0 file:bg-transparent file:text-[11px]"
                           onChange={(event) => {
-                            const file = event.target.files?.[0];
+                            const file = event.target.files?.[0] ?? null;
+                            setProofFile(file);
                             bankForm.setValue("proofName", file?.name ?? "", { shouldValidate: true });
                           }}
                         />

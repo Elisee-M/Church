@@ -134,6 +134,7 @@ export async function submitBankTransferProof(input: {
   bankName: string;
   reference: string;
   proofName?: string;
+  proofPath?: string;
 }) {
   const supabase = createClient();
   const { data: inv, error: invErr } = await supabase
@@ -152,7 +153,10 @@ export async function submitBankTransferProof(input: {
     transaction_reference: input.reference.trim() || `BNK-${Date.now().toString().slice(-8)}`,
     payment_status: "under_review",
     payment_date: new Date().toISOString(),
-    notes: `Bank transfer submitted. Proof: ${input.proofName || "n/a"}. Awaiting verification.`,
+    notes: [
+      "Bank transfer submitted. Awaiting verification.",
+      input.proofPath ? `Proof path: ${input.proofPath}` : input.proofName ? `Proof: ${input.proofName}` : null,
+    ].filter(Boolean).join(" "),
   });
   if (error) throw new Error(error.message);
   await refreshDatabase();
