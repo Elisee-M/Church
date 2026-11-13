@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -12,10 +12,9 @@ import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { useTranslation } from "@/lib/providers/locale-provider";
-import { ROLE_HOME } from "@/lib/constants";
-import type { Role } from "@/types";
+import { createClient } from "@/lib/supabase/client";
+import { getUserRole, ROLE_HOME } from "@/lib/auth/roles";
 
 const loginSchema = z.object({
   email: z.string().min(1, "Enter your email").email("Enter a valid email address"),
@@ -25,38 +24,64 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>;
 
-const PORTALS: { role: Role; label: string }[] = [
-  { role: "admin", label: "Administrator" },
-  { role: "accountant", label: "Accountant" },
-  { role: "tenant", label: "Tenant" },
-];
-
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const [showPassword, setShowPassword] = React.useState(false);
-  const [pendingRole, setPendingRole] = React.useState<Role | null>(null);
+
+  React.useEffect(() => {
+    const err = searchParams.get("error");
+    if (err === "no_role") {
+      toast.error("No role assigned", {
+        description: "Your account does not have an assigned role yet. Contact an administrator.",
+      });
+    } else if (err === "auth_callback") {
+      toast.error("Authentication failed", {
+        description: "The sign-in or recovery link is invalid or expired. Please try again.",
+      });
+    }
+  }, [searchParams]);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "", remember: true },
   });
 
-  const onSubmit = form.handleSubmit(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 650));
-    toast.success("Signed in", {
-      description: "Authentication will be connected when the backend is added.",
-    });
-    router.push("/admin/dashboard");
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+        toast.error("Supabase is not configured", {
+          description: "Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local.",
+        });
+        return;
+      }
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      if (error) {
+        toast.error("Sign in failed", { description: error.message });
+        return;
+      }
+      const role = data.user ? await getUserRole(supabase, data.user.id) : null;
+      if (!role) {
+        await supabase.auth.signOut();
+        toast.error("No role assigned", {
+          description: "Your account is authenticated but has no role. Contact an administrator.",
+        });
+        return;
+      }
+      const next = searchParams.get("next");
+      toast.success("Welcome to Genzura");
+      router.replace(next && next.startsWith("/") ? next : ROLE_HOME[role]);
+      router.refresh();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Unable to sign in.";
+      toast.error("Sign in failed", { description: message });
+    }
   });
-
-  const enterAs = (role: Role) => {
-    setPendingRole(role);
-    window.setTimeout(() => {
-      toast.success(`Entering the ${role} portal`);
-      router.push(ROLE_HOME[role]);
-    }, 450);
-  };
 
   return (
     <div className="w-full max-w-[400px]">
@@ -69,9 +94,7 @@ export function LoginForm() {
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-card md:p-7">
         <div className="mb-5">
-          <div className="flex items-center gap-2">
-            <h1 className="font-display text-xl font-semibold tracking-tight">{t("auth.welcomeBack")}</h1>
-          </div>
+          <h1 className="font-display text-xl font-semibold tracking-tight">{t("auth.welcomeBack")}</h1>
           <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
             {t("auth.signInSubtitle")}
           </p>
@@ -86,7 +109,7 @@ export function LoginForm() {
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder="you@genzura.rw"
+                placeholder="you@example.com"
                 className="pl-9"
                 aria-invalid={Boolean(form.formState.errors.email)}
                 {...form.register("email")}
@@ -150,38 +173,11 @@ export function LoginForm() {
               t("auth.signIn")
             )}
           </Button>
-
         </form>
-
-        <div className="my-5 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
-            {t("auth.continueAs")}
-          </span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          {PORTALS.map((portal) => (
-            <button
-              key={portal.role}
-              type="button"
-              disabled={pendingRole !== null}
-              onClick={() => enterAs(portal.role)}
-              className="flex flex-col items-center gap-1.5 rounded-lg border border-border bg-background px-2 py-3 text-center transition hover:border-primary/30 hover:bg-accent disabled:opacity-60"
-            >
-              <span className="flex size-7 items-center justify-center rounded-md bg-secondary text-[10px] font-bold uppercase text-primary dark:text-foreground">
-                {portal.role.slice(0, 2)}
-              </span>
-              <span className="text-[10.5px] font-medium">{portal.label}</span>
-              {pendingRole === portal.role && <Loader2 className="size-3 animate-spin text-muted-foreground" />}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="mt-6 flex items-center justify-between text-[10px] text-muted-foreground">
-        <span>© {new Date().getFullYear()} Genzura · {t("common.allRightsReserved")}</span>
+        <span>© {new Date().getFullYear()} Genzura — {t("common.allRightsReserved")}</span>
         <span className="flex items-center gap-1">
           <LockKeyhole className="size-3" /> {t("auth.secureAccess")}
         </span>

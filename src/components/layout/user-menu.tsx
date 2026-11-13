@@ -1,12 +1,11 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, RotateCcw, Settings, UserRound } from "lucide-react";
+import { LogOut, Settings, UserRound } from "lucide-react";
 import { toast } from "sonner";
-import { ROLE_HOME } from "@/lib/constants";
 import { initials } from "@/lib/utils";
-import { resetDatabase } from "@/lib/services";
-import { currentRole } from "./role-switcher";
+import { ROLE_HOME, type AppRole } from "@/lib/auth/roles";
+import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -17,11 +16,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const ROLE_LABEL: Record<string, string> = {
+const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Administrator",
   accountant: "Accountant",
   tenant: "Tenant",
 };
+
+function currentRole(pathname: string): AppRole {
+  if (pathname.startsWith("/accountant")) return "accountant";
+  if (pathname.startsWith("/tenant")) return "tenant";
+  return "admin";
+}
 
 export function UserMenu() {
   const pathname = usePathname();
@@ -44,11 +49,21 @@ export function UserMenu() {
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuLabel className="normal-case tracking-normal">
           <p className="text-[13px] font-semibold text-foreground">{user.name}</p>
-          <p className="mt-0.5 truncate text-[11px] font-normal text-muted-foreground">{user.email}</p>
+          <p className="mt-0.5 truncate text-[11px] font-normal text-muted-foreground">
+            {user.email || "Signed in"}
+          </p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => router.push(role === "tenant" ? "/tenant/profile" : role === "admin" ? "/admin/settings" : "/accountant/dashboard")}
+          onClick={() =>
+            router.push(
+              role === "tenant"
+                ? "/tenant/profile"
+                : role === "admin"
+                  ? "/admin/settings"
+                  : "/accountant/dashboard",
+            )
+          }
         >
           {role === "tenant" ? <UserRound /> : <Settings />}
           {role === "tenant" ? "My profile" : "Settings"}
@@ -59,21 +74,19 @@ export function UserMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => {
-            resetDatabase();
-            toast.success("Data reset", {
-              description: "The in-memory database has been cleared.",
-            });
-          }}
-        >
-          <RotateCcw />
-          Reset data
-        </DropdownMenuItem>
-        <DropdownMenuItem
           variant="destructive"
-          onClick={() => {
-            router.push("/login");
-            toast.message("Signed out of the demo");
+          onClick={async () => {
+            try {
+              if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+                const supabase = createClient();
+                await supabase.auth.signOut();
+              }
+              toast.message("Signed out");
+              router.push("/login");
+              router.refresh();
+            } catch {
+              router.push("/login");
+            }
           }}
         >
           <LogOut />

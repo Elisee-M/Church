@@ -6,11 +6,13 @@ import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { toast } from "sonner";
 import { Logo } from "@/components/layout/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/lib/providers/locale-provider";
+import { createClient } from "@/lib/supabase/client";
 
 const schema = z.object({
   email: z.string().min(1, "Enter your email").email("Enter a valid email address"),
@@ -24,9 +26,29 @@ export default function ForgotPasswordPage() {
     defaultValues: { email: "" },
   });
 
-  const onSubmit = form.handleSubmit(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    setSent(true);
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+        toast.error("Supabase is not configured", {
+          description: "Set Supabase environment variables before requesting a password reset.",
+        });
+        return;
+      }
+      const supabase = createClient();
+      const origin = window.location.origin;
+      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
+        redirectTo: `${origin}/auth/callback?next=/auth/reset-password`,
+      });
+      if (error) {
+        toast.error("Could not send reset email", { description: error.message });
+        return;
+      }
+      setSent(true);
+    } catch (e) {
+      toast.error("Could not send reset email", {
+        description: e instanceof Error ? e.message : "Please try again.",
+      });
+    }
   });
 
   return (
@@ -42,7 +64,7 @@ export default function ForgotPasswordPage() {
             </div>
             <h1 className="mt-4 font-display text-xl font-semibold">Check your inbox</h1>
             <p className="mt-2 text-[12.5px] leading-relaxed text-muted-foreground">
-              {t("auth.resetSent")} This is a simulated frontend action — no email is actually sent.
+              If an account exists for that email, a password reset link has been sent.
             </p>
             <Button asChild variant="outline" className="mt-5 w-full">
               <Link href="/login">
@@ -65,7 +87,7 @@ export default function ForgotPasswordPage() {
                     id="reset-email"
                     type="email"
                     autoComplete="email"
-                    placeholder="you@genzura.rw"
+                    placeholder="you@example.com"
                     className="pl-9"
                     aria-invalid={Boolean(form.formState.errors.email)}
                     {...form.register("email")}

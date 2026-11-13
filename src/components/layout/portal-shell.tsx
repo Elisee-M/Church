@@ -50,8 +50,8 @@ export function PortalShell({ role, children }: { role: Role; children: React.Re
           {children}
         </main>
         <footer className="mx-auto flex w-full max-w-[1560px] flex-wrap items-center justify-between gap-2 px-4 pb-6 pt-2 text-[10px] text-muted-foreground/70 md:px-6 lg:px-8">
-          <span>Genzura · Property Management Made Simple.</span>
-          <span>Frontend prototype · Mock data · No real transactions</span>
+          <span>Genzura — Property Management Made Simple.</span>
+          <span>Secure, role-based property and rental management</span>
         </footer>
       </div>
 
