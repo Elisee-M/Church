@@ -6,23 +6,39 @@ import {
   getDatabase,
   getServerDatabase,
   subscribeToDatabase,
+  isDatabaseLoaded,
+  refreshDatabase,
 } from "@/lib/services/store";
 
 export function useDatabase(): Database {
-  return React.useSyncExternalStore(
+  const db = React.useSyncExternalStore(
     subscribeToDatabase,
     getDatabase,
     getServerDatabase,
   );
+  React.useEffect(() => {
+    if (!isDatabaseLoaded()) void refreshDatabase();
+  }, []);
+  return db;
 }
 
-/** Small, deliberate skeleton delay so loading states are part of the prototype. */
+/** Ready when initial data load has completed (or a short delay), to drive skeleton states. */
 export function usePageReady(delay = 320) {
-  const [ready, setReady] = React.useState(false);
+  const [ready, setReady] = React.useState(() => isDatabaseLoaded());
   React.useEffect(() => {
-    const timer = window.setTimeout(() => setReady(true), delay);
+    if (ready) return;
+    const timer = window.setTimeout(() => {
+      if (isDatabaseLoaded()) setReady(true);
+    }, delay);
     return () => window.clearTimeout(timer);
-  }, [delay]);
+  }, [delay, ready]);
+  // become ready when store notifies after load
+  React.useEffect(() => {
+    const unsubscribe = subscribeToDatabase(() => {
+      if (isDatabaseLoaded()) setReady(true);
+    });
+    return () => unsubscribe();
+  }, []);
   return ready;
 }
 
