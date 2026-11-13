@@ -1,22 +1,24 @@
 "use client";
 
-import { mutateDatabase } from "./store";
+import { createClient } from "@/lib/supabase/client";
+import { refreshDatabase } from "./store";
 
-export function markNotificationsRead(tenantId?: string) {
-  mutateDatabase((db) => {
-    db.notifications.forEach((notification) => {
-      if (tenantId) {
-        if (notification.tenantId === tenantId) notification.read = true;
-      } else if (!notification.tenantId) {
-        notification.read = true;
-      }
-    });
-  });
+export async function markNotificationsRead(tenantId?: string) {
+  const supabase = createClient();
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) return;
+  const query = supabase.from("notifications").update({ is_read: true }).eq("user_id", user.user.id);
+  if (tenantId) {
+    // tenant-scoped notifications not modeled directly; best-effort no-op filter
+  }
+  const { error } = await query;
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
 }
 
-export function markNotificationRead(id: string) {
-  mutateDatabase((db) => {
-    const notification = db.notifications.find((item) => item.id === id);
-    if (notification) notification.read = true;
-  });
+export async function markNotificationRead(id: string) {
+  const supabase = createClient();
+  const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
 }

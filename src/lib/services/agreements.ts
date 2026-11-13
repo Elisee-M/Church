@@ -1,8 +1,8 @@
 "use client";
 
-import type { Agreement, AgreementLine, AgreementStatus } from "@/types";
-import { mutateDatabase, newId } from "./store";
-import { addActivity } from "./activity";
+import type { AgreementLine, AgreementStatus } from "@/types";
+import { createClient } from "@/lib/supabase/client";
+import { refreshDatabase } from "./store";
 
 export type AgreementInput = {
   tenantId: string;
@@ -25,142 +25,126 @@ export function statusForEndDate(endDate: string): AgreementStatus {
   return days <= 90 ? "expiring" : "active";
 }
 
-export function createAgreement(input: AgreementInput) {
-  const id = newId("agr");
-  mutateDatabase((db) => {
-    const tenant = db.tenants.find((item) => item.id === input.tenantId);
-    const sequence = db.agreements.length + 1;
-    const year = input.startDate.slice(0, 4);
-    const agreement: Agreement = {
-      id,
-      reference: `AGR-${year}-${String(sequence).padStart(3, "0")}`,
-      tenantId: input.tenantId,
-      lineItems: input.lineItems,
-      startDate: input.startDate,
-      endDate: input.endDate,
-      dueDay: input.dueDay,
-      monthlyCycle: "monthly",
-      status: statusForEndDate(input.endDate),
-      deposit: input.deposit,
-      penaltyEnabled: input.penaltyEnabled ?? true,
-      penaltyRate: input.penaltyRate ?? db.settings.penalties.ratePercent,
-      notes: input.notes,
-      documentName: `Agreement-${(tenant?.name ?? "Tenant").replaceAll(" ", "-")}-${year}.pdf`,
-      createdAt: new Date().toISOString(),
-    };
-    db.agreements.unshift(agreement);
-    agreement.lineItems.forEach((line) => {
-      const space = db.spaces.find((item) => item.id === line.spaceId);
-      if (space) {
-        space.status = "occupied";
-        space.tenantId = input.tenantId;
-        space.history.unshift({
-          id: `${space.id}-${Date.now()}`,
-          date: input.startDate,
-          event: "New agreement signed",
-          description: `${tenant?.name ?? "Tenant"} signed ${agreement.reference}.`,
+async function getOrgId() {
+  const supabase = createClient();
+  const { data } = await supabase.from("organizations").select("id").limit(1).maybeSingle();
+  if (!data?.id) throw new Error("No organization found.");
+  return data.id as string;
+}
+
+function nextAgreementNumber(startDate: string) {
+  const year = (startDate || new Date().toISOString()).slice(0, 4);
+  return `AGR-${year}-${Date.now().toString().slice(-6)}`;
+}
+
+export async function createAgreement(input: AgreementInput) {
+  const supabase = createClient();
+  const orgId = await getOrgId();
+  const status = statusForEndDate(input.endDate);
+  const { data: agreement, error } = await supabase
+    .from("rental_agreements")
+    .insert({
+      organization_id: orgId,
+      tenant_id: input.tenantId,
+      agreement_number: nextAgreementNumber(input.startDate),
+      start_date: input.startDate,
+      end_date: input.endDate,
+      billing_day: input.dueDay,
+      payment_due_day: input.dueDay,
+      status: status === "terminated" ? "terminated" : status,
+      terms: input.notes || null,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+
+  if (input.lineItems.length) {
+    const rows = input.lineItems.map((line) => ({
+      agreement_id: agreement.id,
+      space_id: line.spaceId,
+      monthly_rent_amount: line.monthlyRent,
+      start_date: input.startDate,
+      end_date: input.endDate,
+    }));
+    const { error: sErr } = await supabase.from("agreement_spaces").insert(rows);
+    if (sErr) throw new Error(sErr.message);
+    // mark spaces occupied
+    const spaceIds = input.lineItems.map((l) => l.spaceId);
+    await supabase.from("spaces").update({ occupancy_status: "occupied" }).in("id", spaceIds);
+  }
+  await refreshDatabase();
+  return agreement.id as string;
+}
+
+export async function updateAgreement(id: string, patch: Partial<AgreementInput>) {
+  const supabase = createClient();
+  const update: Record<string, unknown> = {};
+  if (patch.startDate) update.start_date = patch.startDate;
+  if (patch.endDate) {
+    update.end_date = patch.endDate;
+    update.status = statusForEndDate(patch.endDate);
+  }
+  if (patch.dueDay) {
+    update.billing_day = patch.dueDay;
+    update.payment_due_day = patch.dueDay;
+  }
+  if (patch.notes !== undefined) update.terms = patch.notes;
+  if (Object.keys(update).length) {
+    const { error } = await supabase.from("rental_agreements").update(update).eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+  if (patch.lineItems) {
+    const { data: existing } = await supabase
+      .from("agreement_spaces")
+      .select("id, space_id")
+      .eq("agreement_id", id);
+    const prev = (existing ?? []) as Array<{ id: string; space_id: string }>;
+    const nextIds = new Set(patch.lineItems.map((l) => l.spaceId));
+    const removed = prev.filter((p) => !nextIds.has(p.space_id));
+    if (removed.length) {
+      await supabase.from("agreement_spaces").delete().in("id", removed.map((r) => r.id));
+      await supabase
+        .from("spaces")
+        .update({ occupancy_status: "vacant" })
+        .in("id", removed.map((r) => r.space_id));
+    }
+    for (const line of patch.lineItems) {
+      const found = prev.find((p) => p.space_id === line.spaceId);
+      if (found) {
+        await supabase
+          .from("agreement_spaces")
+          .update({ monthly_rent_amount: line.monthlyRent })
+          .eq("id", found.id);
+      } else {
+        await supabase.from("agreement_spaces").insert({
+          agreement_id: id,
+          space_id: line.spaceId,
+          monthly_rent_amount: line.monthlyRent,
+          start_date: patch.startDate ?? new Date().toISOString().slice(0, 10),
+          end_date: patch.endDate ?? null,
         });
       }
-    });
-    db.documents.unshift({
-      id: newId("doc"),
-      name: agreement.documentName ?? "Agreement.pdf",
-      type: "agreement",
-      relatedId: agreement.id,
-      tenantId: agreement.tenantId,
-      date: agreement.startDate,
-      fileSize: "248 KB",
-      mime: "application/pdf",
-    });
-    addActivity(db, {
-      type: "agreement",
-      title: "Agreement created",
-      description: `${agreement.reference} created for ${tenant?.name ?? "tenant"}.`,
-      actor: "Administrator",
-    });
-  });
-  return id;
+      await supabase.from("spaces").update({ occupancy_status: "occupied" }).eq("id", line.spaceId);
+    }
+  }
+  await refreshDatabase();
 }
 
-export function updateAgreement(id: string, patch: Partial<AgreementInput>) {
-  mutateDatabase((db) => {
-    const agreement = db.agreements.find((item) => item.id === id);
-    if (!agreement) return;
-    const previousLines = [...agreement.lineItems];
-    Object.assign(agreement, patch);
-    if (patch.endDate) agreement.status = statusForEndDate(patch.endDate);
-
-    previousLines.forEach((line) => {
-      if (!agreement.lineItems.some((item) => item.spaceId === line.spaceId)) {
-        const space = db.spaces.find((item) => item.id === line.spaceId);
-        if (space) {
-          space.tenantId = undefined;
-          space.status = "vacant";
-          space.history.unshift({
-            id: `${space.id}-${Date.now()}`,
-            date: new Date().toISOString().slice(0, 10),
-            event: "Removed from agreement",
-            description: `${agreement.reference} was updated and this space was released.`,
-          });
-        }
-      }
-    });
-
-    agreement.lineItems.forEach((line) => {
-      const space = db.spaces.find((item) => item.id === line.spaceId);
-      if (space) {
-        space.status = "occupied";
-        space.tenantId = agreement.tenantId;
-      }
-    });
-
-    addActivity(db, {
-      type: "agreement",
-      title: "Agreement updated",
-      description: `${agreement.reference} was updated.`,
-      actor: "Administrator",
-    });
-  });
+export async function terminateAgreement(id: string, reason: string) {
+  void reason;
+  const supabase = createClient();
+  const today = new Date().toISOString().slice(0, 10);
+  const { error } = await supabase
+    .from("rental_agreements")
+    .update({ status: "terminated", end_date: today })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  const { data: lines } = await supabase.from("agreement_spaces").select("space_id").eq("agreement_id", id);
+  const ids = (lines ?? []).map((l: { space_id: string }) => l.space_id).filter(Boolean);
+  if (ids.length) await supabase.from("spaces").update({ occupancy_status: "vacant" }).in("id", ids);
+  await refreshDatabase();
 }
 
-export function terminateAgreement(id: string, reason: string) {
-  mutateDatabase((db) => {
-    const agreement = db.agreements.find((item) => item.id === id);
-    if (!agreement) return;
-    agreement.status = "terminated";
-    agreement.endDate = new Date().toISOString().slice(0, 10);
-    agreement.lineItems.forEach((line) => {
-      const space = db.spaces.find((item) => item.id === line.spaceId);
-      if (space) {
-        space.tenantId = undefined;
-        space.status = "vacant";
-        space.history.unshift({
-          id: `${space.id}-${Date.now()}`,
-          date: new Date().toISOString().slice(0, 10),
-          event: "Agreement terminated",
-          description: `${agreement.reference} was terminated. Reason: ${reason}. The space is now vacant.`,
-        });
-      }
-    });
-    addActivity(db, {
-      type: "agreement",
-      title: "Agreement terminated",
-      description: `${agreement.reference} was terminated. Reason: ${reason}`,
-      actor: "Administrator",
-    });
-  });
-}
-
-export function renewAgreement(id: string, newEndDate: string) {
-  updateAgreement(id, { endDate: newEndDate });
-  mutateDatabase((db) => {
-    const agreement = db.agreements.find((item) => item.id === id);
-    if (!agreement) return;
-    addActivity(db, {
-      type: "agreement",
-      title: "Agreement renewed",
-      description: `${agreement.reference} now runs until ${newEndDate}.`,
-      actor: "Administrator",
-    });
-  });
+export async function renewAgreement(id: string, newEndDate: string) {
+  await updateAgreement(id, { endDate: newEndDate });
 }

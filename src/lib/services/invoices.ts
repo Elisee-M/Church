@@ -1,117 +1,69 @@
 "use client";
 
-import type { Invoice } from "@/types";
-import { mutateDatabase, newId } from "./store";
-import { addActivity } from "./activity";
-import { deriveInvoiceStatus } from "@/lib/mock-data/analytics";
+import { createClient } from "@/lib/supabase/client";
+import { refreshDatabase } from "./store";
 
-export function generateMonthlyInvoices(period: string) {
-  let generated = 0;
-  mutateDatabase((db) => {
-    const activeAgreements = db.agreements.filter(
-      (agreement) => agreement.status === "active" || agreement.status === "expiring",
-    );
-    let sequence =
-      db.invoices.filter((invoice) => invoice.period === period).length + 1;
-
-    activeAgreements.forEach((agreement) => {
-      const exists = db.invoices.some(
-        (invoice) => invoice.agreementId === agreement.id && invoice.period === period,
-      );
-      if (exists) return;
-
-      const lineItems = agreement.lineItems.map((line) => {
-        const space = db.spaces.find((item) => item.id === line.spaceId);
-        return {
-          id: newId("li"),
-          spaceId: line.spaceId,
-          description: `Monthly rent — ${space?.code ?? line.spaceId} ${space?.name ?? ""}`.trim(),
-          amount: line.monthlyRent,
-        };
-      });
-      const amount = lineItems.reduce((sum, line) => sum + line.amount, 0);
-      const invoice: Invoice = {
-        id: newId("inv"),
-        number: `${db.settings.invoices.prefix}-${period.replace("-", "")}-${String(sequence).padStart(3, "0")}`,
-        tenantId: agreement.tenantId,
-        agreementId: agreement.id,
-        issueDate: `${period}-01`,
-        dueDate: `${period}-${String(agreement.dueDay).padStart(2, "0")}`,
-        period,
-        lineItems,
-        amount,
-        amountPaid: 0,
-        status: deriveInvoiceStatus({
-          id: "",
-          number: "",
-          tenantId: agreement.tenantId,
-          agreementId: agreement.id,
-          issueDate: `${period}-01`,
-          dueDate: `${period}-${String(agreement.dueDay).padStart(2, "0")}`,
-          period,
-          lineItems,
-          amount,
-          amountPaid: 0,
-          status: "pending",
-          ebmStatus: "not_issued",
-          createdAt: new Date().toISOString(),
-        }),
-        ebmStatus: "not_issued",
-        createdAt: new Date().toISOString(),
-      };
-      db.invoices.unshift(invoice);
-      sequence += 1;
-      generated += 1;
-    });
-
-    if (generated > 0) {
-      addActivity(db, {
-        type: "invoice",
-        title: "Monthly invoices generated",
-        description: `${generated} invoices were generated for ${period}.`,
-        actor: "Administrator",
-      });
-    }
+export async function generateMonthlyInvoices(period: string) {
+  const supabase = createClient();
+  const { data: org } = await supabase.from("organizations").select("id").limit(1).maybeSingle();
+  if (!org?.id) throw new Error("No organization found.");
+  const [y, m] = period.split("-").map(Number);
+  const start = `${period}-01`;
+  const endDate = new Date(y, m, 0).toISOString().slice(0, 10);
+  const { data, error } = await supabase.rpc("generate_monthly_invoices", {
+    p_organization_id: org.id,
+    p_period_start: start,
+    p_period_end: endDate,
+    p_issue_date: new Date().toISOString().slice(0, 10),
+    p_due_day: null,
   });
-  return generated;
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
+  return Number(data ?? 0);
 }
 
-export function recordEbmReference(
+export async function recordEbmReference(
   invoiceId: string,
   reference: string,
   attachDocument: boolean,
   documentName?: string,
 ) {
-  mutateDatabase((db) => {
-    const invoice = db.invoices.find((item) => item.id === invoiceId);
-    if (!invoice) return;
-    invoice.ebmReference = reference.trim();
-    invoice.ebmStatus = attachDocument ? "document_attached" : "reference_recorded";
-    if (attachDocument) {
-      db.documents.unshift({
-        id: newId("doc"),
-        name: documentName?.trim() || `EBM-fiscal-invoice-${reference}.pdf`,
-        type: "ebm_invoice",
-        relatedId: invoice.id,
-        invoiceId: invoice.id,
-        tenantId: invoice.tenantId,
-        date: new Date().toISOString().slice(0, 10),
-        fileSize: "148 KB",
-        mime: "application/pdf",
-      });
-    }
-    addActivity(db, {
-      type: "invoice",
-      title: "EBM reference recorded",
-      description: `${reference} was recorded against ${invoice.number}. This is a reference to the church's EBM solution, not a generated fiscal document.`,
-      actor: "Accountant",
+  const supabase = createClient();
+  const { data: inv } = await supabase
+    .from("invoices")
+    .select("id, organization_id, tenant_id")
+    .eq("id", invoiceId)
+    .single();
+  if (!inv) throw new Error("Invoice not found.");
+  const { error } = await supabase.from("ebm_records").upsert(
+    {
+      organization_id: (inv as { organization_id: string }).organization_id,
+      invoice_id: invoiceId,
+      tenant_id: (inv as { tenant_id: string }).tenant_id,
+      ebm_reference: reference.trim(),
+      document_path: attachDocument ? (documentName || null) : null,
+      issued_at: new Date().toISOString(),
+    },
+    { onConflict: "id" },
+  );
+  // upsert without unique on invoice may create duplicates; try insert
+  if (error) {
+    const { error: e2 } = await supabase.from("ebm_records").insert({
+      organization_id: (inv as { organization_id: string }).organization_id,
+      invoice_id: invoiceId,
+      tenant_id: (inv as { tenant_id: string }).tenant_id,
+      ebm_reference: reference.trim(),
+      document_path: attachDocument ? (documentName || null) : null,
+      issued_at: new Date().toISOString(),
     });
-  });
+    if (e2) throw new Error(e2.message);
+  }
+  await refreshDatabase();
 }
 
-export function updateInvoiceNotes(invoiceId: string, notes: string) {
-  mutateDatabase((db) => {
-    const invoice = db.invoices.find((item) => item.id === invoiceId);
-    if (invoice) invoice.notes = notes;
-  });
+export async function updateInvoiceNotes(invoiceId: string, notes: string) {
+  const supabase = createClient();
+  const { error } = await supabase.from("invoices").update({ notes }).eq("id", invoiceId);
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
 }

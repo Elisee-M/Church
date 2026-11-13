@@ -1,150 +1,111 @@
 "use client";
 
-import type { Building, Space, SpaceCategory, SpaceStatus } from "@/types";
-import { mutateDatabase, newId } from "./store";
-import { addActivity } from "./activity";
+import { createClient } from "@/lib/supabase/client";
+import { refreshDatabase } from "./store";
 
-export type SpaceInput = {
-  code: string;
+export async function createBuilding(input: {
   name: string;
+  address: string;
+  district?: string;
+  city?: string;
+  floorsCount: number;
+  yearBuilt?: number;
+  description?: string;
+}) {
+  const supabase = createClient();
+  const { data: org } = await supabase.from("organizations").select("id").limit(1).maybeSingle();
+  if (!org?.id) throw new Error("No organization found. Create an organization first.");
+  const { data, error } = await supabase
+    .from("buildings")
+    .insert({
+      organization_id: org.id,
+      name: input.name,
+      address: input.address || null,
+      description: input.description || null,
+      number_of_floors: input.floorsCount ?? 0,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
+  return data.id as string;
+}
+
+export async function updateBuilding(
+  id: string,
+  input: Partial<{ name: string; address: string; description: string; floorsCount: number }>,
+) {
+  const supabase = createClient();
+  const patch: Record<string, unknown> = {};
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.address !== undefined) patch.address = input.address;
+  if (input.description !== undefined) patch.description = input.description;
+  if (input.floorsCount !== undefined) patch.number_of_floors = input.floorsCount;
+  const { error } = await supabase.from("buildings").update(patch).eq("id", id);
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
+}
+
+export async function createSpace(input: {
   buildingId: string;
   floorId: string;
-  category: SpaceCategory;
+  code: string;
+  name: string;
+  category: string;
   sizeSqm: number;
   monthlyRent: number;
-  description: string;
-  features?: string[];
-};
-
-export function addSpace(input: SpaceInput) {
-  const id = newId("s");
-  mutateDatabase((db) => {
-    db.spaces.push({
-      id,
-      ...input,
-      status: "vacant",
-      features: input.features?.length
-        ? input.features
-        : ["Water & electricity", "Security"],
-      history: [
-        {
-          id: `${id}-h1`,
-          date: new Date().toISOString().slice(0, 10),
-          event: "Space created",
-          description: "Added to the portfolio and listed as vacant.",
-        },
-      ],
-    });
-    addActivity(db, {
-      type: "system",
-      title: "New space added",
-      description: `${input.code} ${input.name} was added to the property portfolio.`,
-      actor: "Administrator",
-    });
+  description?: string;
+}) {
+  const supabase = createClient();
+  const { data: building } = await supabase
+    .from("buildings")
+    .select("organization_id")
+    .eq("id", input.buildingId)
+    .single();
+  if (!building?.organization_id) throw new Error("Building not found.");
+  const { error } = await supabase.from("spaces").insert({
+    organization_id: building.organization_id,
+    building_id: input.buildingId,
+    floor_id: input.floorId,
+    space_code: input.code,
+    name: input.name,
+    category: input.category,
+    description: input.description || null,
+    area: input.sizeSqm ?? null,
+    default_rent_amount: input.monthlyRent ?? 0,
+    occupancy_status: "vacant",
   });
-  return id;
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
 }
 
-export function updateSpaceStatus(
+export async function updateSpace(
   id: string,
-  status: SpaceStatus,
-  note = "Status changed from the property workspace.",
+  input: Partial<{
+    code: string;
+    name: string;
+    category: string;
+    sizeSqm: number;
+    monthlyRent: number;
+    description: string;
+  }>,
 ) {
-  mutateDatabase((db) => {
-    const space = db.spaces.find((item) => item.id === id);
-    if (!space) return;
-    space.status = status;
-    space.history.unshift({
-      id: `${id}-${Date.now()}`,
-      date: new Date().toISOString().slice(0, 10),
-      event: "Status updated",
-      description: note,
-    });
-    addActivity(db, {
-      type: "system",
-      title: "Space status updated",
-      description: `${space.code} is now ${status}.`,
-      actor: "Administrator",
-    });
-  });
+  const supabase = createClient();
+  const patch: Record<string, unknown> = {};
+  if (input.code !== undefined) patch.space_code = input.code;
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.category !== undefined) patch.category = input.category;
+  if (input.sizeSqm !== undefined) patch.area = input.sizeSqm;
+  if (input.monthlyRent !== undefined) patch.default_rent_amount = input.monthlyRent;
+  if (input.description !== undefined) patch.description = input.description;
+  const { error } = await supabase.from("spaces").update(patch).eq("id", id);
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
 }
 
-export function updateSpace(id: string, patch: Partial<Space>) {
-  mutateDatabase((db) => {
-    const space = db.spaces.find((item) => item.id === id);
-    if (!space) return;
-    Object.assign(space, patch);
-  });
-}
-
-export type BuildingInput = Omit<Building, "id">;
-
-export function updateBuilding(id: string, patch: Partial<BuildingInput>) {
-  mutateDatabase((db) => {
-    const building = db.buildings.find((item) => item.id === id);
-    if (!building) return;
-    Object.assign(building, patch);
-    addActivity(db, {
-      type: "system",
-      title: "Building updated",
-      description: `${building.name} details were updated.`,
-      actor: "Administrator",
-    });
-  });
-}
-
-export function addFloor(buildingId: string, name: string) {
-  mutateDatabase((db) => {
-    const building = db.buildings.find((item) => item.id === buildingId);
-    if (!building) return;
-    const levels = db.floors.filter((floor) => floor.buildingId === buildingId).length;
-    db.floors.push({
-      id: newId(`${buildingId}-f`),
-      buildingId,
-      name,
-      level: levels,
-    });
-    building.floorsCount = levels + 1;
-    addActivity(db, {
-      type: "system",
-      title: "Floor added",
-      description: `${name} was added to ${building.name}.`,
-      actor: "Administrator",
-    });
-  });
-}
-
-export function addBuilding(input: BuildingInput) {
-  const id = newId("b");
-  mutateDatabase((db) => {
-    db.buildings.push({ id, ...input });
-    for (let level = 0; level < input.floorsCount; level += 1) {
-      db.floors.push({
-        id: `${id}-f${level}`,
-        buildingId: id,
-        name:
-          level === 0
-            ? "Ground floor"
-            : level === 1
-              ? "First floor"
-              : level === 2
-                ? "Second floor"
-                : level === 3
-                  ? "Third floor"
-                  : `Floor ${level}`,
-        level,
-      });
-    }
-    addActivity(db, {
-      type: "system",
-      title: "Building added",
-      description: `${input.name} was added with ${input.floorsCount} floors.`,
-      actor: "Administrator",
-    });
-  });
-  return id;
-}
-
-export function getSpaceLabel(space?: Space) {
-  return space ? `${space.code} · ${space.name}` : "Unknown space";
+export async function updateSpaceStatus(id: string, status: "occupied" | "vacant" | "maintenance" | "reserved") {
+  const supabase = createClient();
+  const { error } = await supabase.from("spaces").update({ occupancy_status: status }).eq("id", id);
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
 }

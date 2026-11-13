@@ -1,12 +1,12 @@
 "use client";
 
-import type { Expense, ExpenseCategory } from "@/types";
-import { mutateDatabase, newId } from "./store";
-import { addActivity } from "./activity";
+import type { Expense } from "@/types";
+import { createClient } from "@/lib/supabase/client";
+import { refreshDatabase } from "./store";
 
 export type ExpenseInput = {
   title: string;
-  category: ExpenseCategory;
+  category: Expense["category"];
   buildingId: string;
   amount: number;
   date: string;
@@ -16,48 +16,46 @@ export type ExpenseInput = {
   receiptName?: string;
 };
 
-export function createExpense(input: ExpenseInput) {
-  mutateDatabase((db) => {
-    const sequence = db.expenses.length + 1;
-    db.expenses.unshift({
-      id: newId("e"),
-      reference: `EXP-${new Date().getFullYear()}-${String(sequence).padStart(4, "0")}`,
-      ...input,
-      recordedBy: "Accountant",
-    });
-    addActivity(db, {
-      type: "expense",
-      title: "Expense recorded",
-      description: `${input.title} · RWF ${input.amount.toLocaleString("en-RW")} for ${db.buildings.find((building) => building.id === input.buildingId)?.name ?? "building"}.`,
-      actor: "Accountant",
-    });
-  });
+async function getOrgId() {
+  const supabase = createClient();
+  const { data } = await supabase.from("organizations").select("id").limit(1).maybeSingle();
+  if (!data?.id) throw new Error("No organization found.");
+  return data.id as string;
 }
 
-export function updateExpense(id: string, patch: Partial<ExpenseInput>) {
-  mutateDatabase((db) => {
-    const expense = db.expenses.find((item) => item.id === id);
-    if (!expense) return;
-    Object.assign(expense, patch);
-    addActivity(db, {
-      type: "expense",
-      title: "Expense updated",
-      description: `${expense.title} was updated by the accountant.`,
-      actor: "Accountant",
-    });
+export async function createExpense(input: ExpenseInput) {
+  const supabase = createClient();
+  const orgId = await getOrgId();
+  const { error } = await supabase.from("expenses").insert({
+    organization_id: orgId,
+    building_id: input.buildingId || null,
+    amount: input.amount,
+    description: input.title || input.notes || null,
+    expense_date: input.date,
+    receipt_document_path: input.receiptName || null,
   });
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
 }
 
-export function deleteExpense(id: string) {
-  mutateDatabase((db) => {
-    const index = db.expenses.findIndex((item) => item.id === id);
-    if (index === -1) return;
-    const [expense] = db.expenses.splice(index, 1);
-    addActivity(db, {
-      type: "expense",
-      title: "Expense removed",
-      description: `${expense.title} (${expense.reference}) was removed from the expense ledger.`,
-      actor: "Administrator",
-    });
-  });
+export async function updateExpense(id: string, patch: Partial<ExpenseInput>) {
+  const supabase = createClient();
+  const update: Record<string, unknown> = {};
+  if (patch.amount !== undefined) update.amount = patch.amount;
+  if (patch.date !== undefined) update.expense_date = patch.date;
+  if (patch.title !== undefined) update.description = patch.title;
+  if (patch.buildingId !== undefined) update.building_id = patch.buildingId || null;
+  if (patch.receiptName !== undefined) update.receipt_document_path = patch.receiptName;
+  if (Object.keys(update).length) {
+    const { error } = await supabase.from("expenses").update(update).eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+  await refreshDatabase();
+}
+
+export async function deleteExpense(id: string) {
+  const supabase = createClient();
+  const { error } = await supabase.from("expenses").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  await refreshDatabase();
 }
