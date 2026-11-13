@@ -541,12 +541,16 @@ export function ReconciliationWorkspace() {
             : ""
         }
         confirmLabel="Match payment"
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!matchTarget) return;
-          verifyPayment(matchTarget.paymentId, "approve");
-          toast.success("Statement line matched", {
-            description: `${formatCurrency(matchTarget.amount)} is now confirmed for ${matchTarget.tenantName}.`,
-          });
+          try {
+            await verifyPayment(matchTarget.paymentId, "approve");
+            toast.success("Statement line matched", {
+              description: `${formatCurrency(matchTarget.amount)} is now confirmed for ${matchTarget.tenantName}.`,
+            });
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not match the payment.");
+          }
           setMatchTarget(null);
         }}
       />

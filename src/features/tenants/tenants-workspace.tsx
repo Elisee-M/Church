@@ -304,13 +304,17 @@ export function TenantsWorkspace() {
         }
         confirmLabel={statusTarget?.status === "active" ? "Deactivate" : "Reactivate"}
         variant={statusTarget?.status === "active" ? "destructive" : "default"}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!statusTarget) return;
           const next = statusTarget.status === "active" ? "inactive" : "active";
-          setTenantStatus(statusTarget.id, next);
-          toast.success(next === "active" ? "Tenant reactivated" : "Tenant deactivated", {
-            description: `${statusTarget.name} is now ${next}.`,
-          });
+          try {
+            await setTenantStatus(statusTarget.id, next);
+            toast.success(next === "active" ? "Tenant reactivated" : "Tenant deactivated", {
+              description: `${statusTarget.name} is now ${next}.`,
+            });
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not update tenant status.");
+          }
           setStatusTarget(null);
         }}
       />

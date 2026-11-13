@@ -564,12 +564,16 @@ export function PaymentsWorkspace({
             : ""
         }
         confirmLabel="Approve payment"
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!approveTarget) return;
-          verifyPayment(approveTarget.id, "approve");
-          toast.success("Payment verified", {
-            description: `${formatCurrency(approveTarget.amount)} now counts as collected.`,
-          });
+          try {
+            await verifyPayment(approveTarget.id, "approve");
+            toast.success("Payment verified", {
+              description: `${formatCurrency(approveTarget.amount)} now counts as collected.`,
+            });
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not verify the payment.");
+          }
           setApproveTarget(null);
         }}
       />
@@ -584,11 +588,15 @@ export function PaymentsWorkspace({
           placeholder="e.g. No matching credit on the bank statement…"
           confirmLabel="Reject payment"
           variant="destructive"
-          onSubmit={(reason) => {
-            verifyPayment(rejectTarget.id, "reject", reason);
-            toast.success("Payment rejected", {
-              description: "The tenant was notified. The invoice balance is unchanged.",
-            });
+          onSubmit={async (reason) => {
+            try {
+              await verifyPayment(rejectTarget.id, "reject", reason);
+              toast.success("Payment rejected", {
+                description: "The invoice balance is unchanged.",
+              });
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Could not reject the payment.");
+            }
             setRejectTarget(null);
           }}
         />
@@ -604,11 +612,11 @@ export function PaymentsWorkspace({
           placeholder="e.g. Payment was applied to the wrong invoice…"
           confirmLabel="Record correction"
           variant="destructive"
-          onSubmit={(reason) => {
+          onSubmit={async (reason) => {
             try {
-              reversePayment(reverseTarget.id, reason);
+              await reversePayment(reverseTarget.id, reason);
               toast.success("Correction recorded", {
-                description: "A reversal entry was added and the invoice balance recalculated.",
+                description: "The payment was corrected and the invoice balance recalculated.",
               });
               setReverseTarget(null);
             } catch (error) {

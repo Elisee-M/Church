@@ -6,7 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import type { Space } from "@/types";
-import { addSpace, updateSpace } from "@/lib/services";
+import { createSpace, updateSpace } from "@/lib/services";
 import { spaceSchema, type SpaceFormValues } from "@/lib/validations/schemas";
 import { useDatabase } from "@/hooks/use-database";
 import { Field } from "@/components/shared/form-field";
@@ -57,18 +57,22 @@ export function SpaceFormDialog({
   const category = useWatch({ control: form.control, name: "category" });
   const floors = db.floors.filter((floor) => floor.buildingId === buildingId);
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(async (values) => {
     const payload = { ...values, description: values.description ?? "" };
-    if (space) {
-      updateSpace(space.id, payload);
-      toast.success("Space updated", { description: `${values.code} ${values.name} was saved.` });
-    } else {
-      addSpace(payload);
-      toast.success("Space added", {
-        description: `${values.code} ${values.name} is now listed as vacant.`,
-      });
+    try {
+      if (space) {
+        await updateSpace(space.id, payload);
+        toast.success("Space updated", { description: `${values.code} ${values.name} was saved.` });
+      } else {
+        await createSpace(payload);
+        toast.success("Space added", {
+          description: `${values.code} ${values.name} was added.`,
+        });
+      }
+      onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save space.");
     }
-    onClose();
   });
 
   return (

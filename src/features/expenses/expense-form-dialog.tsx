@@ -53,17 +53,21 @@ export function ExpenseFormDialog({
   const buildingId = useWatch({ control: form.control, name: "buildingId" });
   const status = useWatch({ control: form.control, name: "status" });
 
-  const onSubmit = form.handleSubmit((values) => {
-    if (expense) {
-      updateExpense(expense.id, { ...values, notes: values.notes ?? "" });
-      toast.success("Expense updated", { description: `${values.title} was saved.` });
-    } else {
-      createExpense({ ...values, notes: values.notes ?? "", receiptName: "Receipt attached (simulated)" });
-      toast.success("Expense recorded", {
-        description: `${values.title} is tracked separately from rental income.`,
-      });
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      if (expense) {
+        await updateExpense(expense.id, { ...values, notes: values.notes ?? "" });
+        toast.success("Expense updated", { description: `${values.title} was saved.` });
+      } else {
+        await createExpense({ ...values, notes: values.notes ?? "", receiptName: "Receipt attached (simulated)" });
+        toast.success("Expense recorded", {
+          description: `${values.title} is tracked separately from rental income.`,
+        });
+      }
+      onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save expense.");
     }
-    onClose();
   });
 
   return (

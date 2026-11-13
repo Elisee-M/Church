@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -95,7 +95,7 @@ export function TenantPay() {
   if (!ready) {
     return (
       <>
-        <PageHeader title="Make a payment" description="Loading your payment options…" />
+        <PageHeader title="Make a payment" description="Loading your payment optionsâ€¦" />
         <LoadingPanel />
       </>
     );
@@ -126,14 +126,16 @@ export function TenantPay() {
     );
   }
 
-  const submitMomo = momoForm.handleSubmit((values) => {
+  const submitMomo = momoForm.handleSubmit(async (values) => {
     if (!invoice) return;
     setMomoPhase("processing");
     setLastMomoOutcome(null);
     // Simulated mobile money confirmation flow. No real payment rail and never asks for a PIN.
-    setTimeout(() => {
+    await new Promise((r) => setTimeout(r, 1800));
+    try {
+      // eslint-disable-next-line react-hooks/purity -- simulated outcome in event handler
       const succeeded = Math.random() > 0.2;
-      const ref = simulateMobileMoneyPayment({
+      const ref = await simulateMobileMoneyPayment({
         invoiceId: invoice.id,
         amount: values.amount,
         method: values.method,
@@ -144,7 +146,7 @@ export function TenantPay() {
       setLastMomoOutcome(succeeded ? "success" : "failed");
       setMomoPhase(succeeded ? "success" : "failed");
       if (succeeded) {
-        toast.success("Payment received — thank you", {
+        toast.success("Payment received â€” thank you", {
           description: `${formatCurrency(values.amount)} for ${invoice.number} was confirmed. No real transaction was made.`,
         });
       } else {
@@ -152,12 +154,16 @@ export function TenantPay() {
           description: "The simulated mobile money request failed. No invoice balance was changed.",
         });
       }
-    }, 1800);
+    } catch (error) {
+      setMomoPhase("form");
+      toast.error(error instanceof Error ? error.message : "Payment failed.");
+    }
   });
 
-  const submitBank = bankForm.handleSubmit((values) => {
+  const submitBank = bankForm.handleSubmit(async (values) => {
     if (!invoice) return;
-    submitBankTransferProof({
+    try {
+      await submitBankTransferProof({
       invoiceId: invoice.id,
       amount: values.amount,
       bankName: values.bankName,
@@ -169,6 +175,9 @@ export function TenantPay() {
       description:
         "Your transfer is awaiting accountant verification and is not counted as collected yet.",
     });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not submit proof.");
+    }
   });
 
   return (
@@ -204,7 +213,7 @@ export function TenantPay() {
                   <SelectContent>
                     {openInvoices.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
-                        {item.number} · {monthLabel(item.period)} · {formatCurrency(invoiceBalance(item))}
+                        {item.number} Â· {monthLabel(item.period)} Â· {formatCurrency(invoiceBalance(item))}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -286,14 +295,14 @@ export function TenantPay() {
           {method !== "bank_transfer" ? (
             <SectionCard
               title="3. Confirm mobile money payment"
-              description="A confirmation request is simulated on your device — no PIN is ever entered here."
+              description="A confirmation request is simulated on your device â€” no PIN is ever entered here."
               action={<Badge variant="success">Simulated</Badge>}
             >
               <div className="px-5 pb-5">
                 {momoPhase === "processing" ? (
                   <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-muted/20 py-10 text-center">
                     <Loader2 className="size-8 animate-spin text-primary dark:text-foreground" />
-                    <p className="mt-3 text-[13px] font-semibold">Waiting for confirmation…</p>
+                    <p className="mt-3 text-[13px] font-semibold">Waiting for confirmationâ€¦</p>
                     <p className="mt-1 max-w-xs text-[10.5px] leading-relaxed text-muted-foreground">
                       Check your phone and confirm the request on your{" "}
                       {momoMethod === "mtn_momo" ? "MTN MoMo" : "Airtel Money"} device. Genzura never
@@ -418,7 +427,7 @@ export function TenantPay() {
                       <p className="font-medium">Transfer to</p>
                       <p className="mt-1 font-mono text-[11px]">{db.settings.payments.bankAccountName}</p>
                       <p className="text-muted-foreground">
-                        {db.settings.payments.bankName} · {db.settings.payments.bankAccount}
+                        {db.settings.payments.bankName} Â· {db.settings.payments.bankAccount}
                       </p>
                       <p className="mt-1 text-[10px] text-muted-foreground">
                         Use your invoice number as the transfer narration where possible.
@@ -486,7 +495,7 @@ export function TenantPay() {
                       <StatusBadge status={invoice.status} className="h-4 px-1.5 text-[9px]" />
                     </div>
                     <p className="mt-1 text-[10.5px] text-muted-foreground">
-                      {monthLabel(invoice.period)} · due {formatDate(invoice.dueDate)}
+                      {monthLabel(invoice.period)} Â· due {formatDate(invoice.dueDate)}
                     </p>
                     <div className="mt-3 space-y-1.5 border-t border-border pt-3">
                       {invoice.lineItems.map((line) => (

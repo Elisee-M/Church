@@ -364,12 +364,16 @@ export function VerificationQueue() {
             : ""
         }
         confirmLabel="Approve payment"
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!approveTarget) return;
-          verifyPayment(approveTarget.id, "approve");
-          toast.success("Payment verified", {
-            description: `${formatCurrency(approveTarget.amount)} is now in the collected ledger.`,
-          });
+          try {
+            await verifyPayment(approveTarget.id, "approve");
+            toast.success("Payment verified", {
+              description: `${formatCurrency(approveTarget.amount)} is now in the collected ledger.`,
+            });
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not verify the payment.");
+          }
           setApproveTarget(null);
         }}
       />
@@ -384,11 +388,15 @@ export function VerificationQueue() {
           placeholder="e.g. The reference does not appear on the bank statement…"
           confirmLabel="Reject payment"
           variant="destructive"
-          onSubmit={(reason) => {
-            verifyPayment(rejectTarget.id, "reject", reason);
-            toast.success("Payment rejected", {
-              description: "The invoice balance was not changed.",
-            });
+          onSubmit={async (reason) => {
+            try {
+              await verifyPayment(rejectTarget.id, "reject", reason);
+              toast.success("Payment rejected", {
+                description: "The invoice balance was not changed.",
+              });
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Could not reject the payment.");
+            }
             setRejectTarget(null);
           }}
         />

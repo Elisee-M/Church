@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import type { Building } from "@/types";
-import { addBuilding, updateBuilding } from "@/lib/services";
+import { createBuilding, updateBuilding } from "@/lib/services";
 import { buildingSchema, type BuildingFormValues } from "@/lib/validations/schemas";
 import { Field } from "@/components/shared/form-field";
 import {
@@ -39,18 +39,22 @@ export function BuildingFormDialog({
     },
   });
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(async (values) => {
     const payload = { ...values, description: values.description ?? "" };
-    if (building) {
-      updateBuilding(building.id, payload);
-      toast.success("Building updated", { description: `${values.name} was saved.` });
-    } else {
-      addBuilding(payload);
-      toast.success("Building added", {
-        description: `${values.name} was added with ${values.floorsCount} floors.`,
-      });
+    try {
+      if (building) {
+        await updateBuilding(building.id, payload);
+        toast.success("Building updated", { description: `${values.name} was saved.` });
+      } else {
+        await createBuilding(payload);
+        toast.success("Building added", {
+          description: `${values.name} was added.`,
+        });
+      }
+      onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save building.");
     }
-    onClose();
   });
 
   return (

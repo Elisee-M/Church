@@ -66,14 +66,14 @@ export function RecordPaymentDialog({
   const remaining = Math.max(balance - (Number(amount) || 0), 0);
   const overpaying = (Number(amount) || 0) > balance;
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(async (values) => {
     const isBank = values.method === "bank_transfer";
     if (isBank && !values.bankName?.trim()) {
       toast.error("Enter the bank name for a bank transfer.");
       return;
     }
     try {
-      recordPayment({
+      await recordPayment({
         invoiceId: values.invoiceId,
         amount: values.amount,
         method: values.method,

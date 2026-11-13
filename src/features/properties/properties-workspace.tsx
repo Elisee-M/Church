@@ -625,11 +625,15 @@ export function PropertiesWorkspace() {
                 </p>
                 <Select
                   value={selectedSpace.status}
-                  onValueChange={(value) => {
-                    updateSpaceStatus(selectedSpace.id, value as SpaceStatus);
-                    toast.success("Space status updated", {
-                      description: `${selectedSpace.code} is now ${value}.`,
-                    });
+                  onValueChange={async (value) => {
+                    try {
+                      await updateSpaceStatus(selectedSpace.id, value as SpaceStatus);
+                      toast.success("Space status updated", {
+                        description: `${selectedSpace.code} is now ${value}.`,
+                      });
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : "Could not update status.");
+                    }
                   }}
                 >
                   <SelectTrigger>

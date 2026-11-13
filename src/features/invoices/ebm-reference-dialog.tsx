@@ -37,7 +37,7 @@ export function EbmReferenceDialog({
   });
   const attachDocument = useWatch({ control: form.control, name: "attachDocument" });
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(async (values) => {
     recordEbmReference(invoice.id, values.reference, values.attachDocument, values.documentName);
     toast.success("EBM reference saved", {
       description:

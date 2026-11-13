@@ -45,21 +45,21 @@ export function GenerateInvoicesDialog({ onClose }: { onClose: () => void }) {
     (invoice) => invoice.status !== "draft" && invoiceBalance(invoice) > 0,
   ).length;
 
-  const submit = () => {
+  const submit = async () => {
     if (!period) {
       toast.error("Select the billing month.");
       return;
     }
     setSubmitting(true);
     try {
-      const generated = generateMonthlyInvoices(period);
+      const generated = await generateMonthlyInvoices(period);
       if (generated === 0) {
         toast.message("No new invoices generated", {
           description: `Every active agreement already has an invoice for ${monthLabel(period)}.`,
         });
       } else {
         toast.success(`${generated} invoices generated`, {
-          description: `${monthLabel(period)} rent invoices are now available for ${formatCurrency(projected)}.`,
+          description: `${monthLabel(period)} rent invoices are now available.`,
         });
       }
       onClose();

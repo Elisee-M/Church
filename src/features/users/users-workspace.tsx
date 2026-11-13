@@ -85,12 +85,16 @@ export function UsersWorkspace() {
   const invited = db.users.filter((user) => user.status === "invited");
   const staff = db.users.filter((user) => user.role !== "Tenant");
 
-  const toggleStatus = (user: SystemUser) => {
+  const toggleStatus = async (user: SystemUser) => {
     const next = user.status === "active" ? "suspended" : "active";
-    updateUser(user.id, { status: next });
-    toast.success(next === "active" ? "Access restored" : "Access suspended", {
-      description: `${user.name} is now ${next}.`,
-    });
+    try {
+      await updateUser(user.id, { status: next });
+      toast.success(next === "active" ? "Access restored" : "Access suspended", {
+        description: `${user.name} is now ${next}.`,
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update user.");
+    }
   };
 
   const columns: DataTableColumn<SystemUser>[] = [
@@ -340,11 +344,15 @@ export function UsersWorkspace() {
                 </p>
                 <Select
                   value={selected.role}
-                  onValueChange={(value) => {
-                    updateUser(selected.id, { role: value as SystemUserRole });
-                    toast.success("Role updated", {
-                      description: `${selected.name} is now ${value}.`,
-                    });
+                  onValueChange={async (value) => {
+                    try {
+                      await updateUser(selected.id, { role: value as SystemUserRole });
+                      toast.success("Role updated", {
+                        description: `${selected.name} is now ${value}.`,
+                      });
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : "Could not update role.");
+                    }
                   }}
                 >
                   <SelectTrigger className="h-9 text-xs">

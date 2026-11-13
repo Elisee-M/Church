@@ -368,10 +368,11 @@ export function ExpensesWorkspace({ mode = "admin" }: { mode?: "admin" | "accoun
         }
         confirmLabel="Delete expense"
         variant="destructive"
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!deleteTarget) return;
-          deleteExpense(deleteTarget.id);
+          try { await deleteExpense(deleteTarget.id);
           toast.success("Expense deleted", { description: `${deleteTarget.title} was removed.` });
+          } catch (error) { toast.error(error instanceof Error ? error.message : "Could not delete expense."); }
           setDeleteTarget(null);
         }}
       />

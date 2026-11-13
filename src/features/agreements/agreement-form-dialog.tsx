@@ -94,7 +94,7 @@ export function AgreementFormDialog({
     else append({ spaceId, monthlyRent });
   };
 
-  const onSubmit = form.handleSubmit((values) => {
+  const onSubmit = form.handleSubmit(async (values) => {
     if (values.lineItems.length === 0) {
       toast.error("Select at least one rental space.");
       return;
@@ -110,16 +110,20 @@ export function AgreementFormDialog({
       penaltyRate: values.penaltyRate,
       notes: values.notes ?? "",
     };
-    if (agreement) {
-      updateAgreement(agreement.id, payload);
-      toast.success("Agreement updated", { description: `${agreement.reference} was saved.` });
-    } else {
-      createAgreement(payload);
-      toast.success("Agreement created", {
-        description: "The selected spaces are now marked as occupied.",
-      });
+    try {
+      if (agreement) {
+        await updateAgreement(agreement.id, payload);
+        toast.success("Agreement updated", { description: `${agreement.reference} was saved.` });
+      } else {
+        await createAgreement(payload);
+        toast.success("Agreement created", {
+          description: "The selected spaces are now marked as occupied.",
+        });
+      }
+      onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the agreement.");
     }
-    onClose();
   });
 
   return (

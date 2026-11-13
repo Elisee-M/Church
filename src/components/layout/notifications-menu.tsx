@@ -65,7 +65,7 @@ export function NotificationsMenu() {
           </div>
           {unread > 0 && (
             <button
-              onClick={() => markNotificationsRead(isTenant ? db.tenants[0]?.id : undefined)}
+              onClick={async () => { try { await markNotificationsRead(isTenant ? db.tenants[0]?.id : undefined); } catch {} }}
               className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline dark:text-foreground"
             >
               <CheckCheck className="size-3.5" /> Mark all read
@@ -84,7 +84,7 @@ export function NotificationsMenu() {
                 <button
                   key={notification.id}
                   onClick={() => {
-                    markNotificationRead(notification.id);
+                    void markNotificationRead(notification.id).catch(() => {});
                     router.push(
                       isTenant
                         ? notification.type === "invoice"

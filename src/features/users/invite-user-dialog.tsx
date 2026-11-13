@@ -45,12 +45,14 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
   });
   const role = useWatch({ control: form.control, name: "role" });
 
-  const onSubmit = form.handleSubmit((values) => {
-    inviteUser(values);
-    toast.success("Invitation sent", {
-      description: `${values.name} was invited as ${values.role}. Email delivery is simulated in this prototype.`,
-    });
-    onClose();
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      await inviteUser(values);
+      toast.success("Invitation sent", { description: `${values.name} was invited as ${values.role}.` });
+      onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not invite user.");
+    }
   });
 
   return (

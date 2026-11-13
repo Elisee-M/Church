@@ -391,11 +391,15 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
         }
         confirmLabel={tenant.status === "active" ? "Deactivate" : "Reactivate"}
         variant={tenant.status === "active" ? "destructive" : "default"}
-        onConfirm={() => {
+        onConfirm={async () => {
           const next = tenant.status === "active" ? "inactive" : "active";
-          setTenantStatus(tenant.id, next);
+          try {
+            await setTenantStatus(tenant.id, next);
+            toast.success(next === "active" ? "Tenant reactivated" : "Tenant deactivated");
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not update tenant status.");
+          }
           setConfirmStatus(false);
-          toast.success(next === "active" ? "Tenant reactivated" : "Tenant deactivated");
         }}
       />
     </div>

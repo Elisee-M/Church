@@ -49,32 +49,24 @@ export function SettingsWorkspace() {
   const [penalties, setPenalties] = React.useState<PenaltySettings>(db.settings.penalties);
   const [ebm, setEbm] = React.useState<EbmSettings>(db.settings.ebm);
 
-  const saveOrganization = () => {
-    updateSettings({ organization });
-    toast.success("Organization settings saved", {
-      description: "Changes apply to this demo session only.",
-    });
+  const saveOrganization = async () => {
+    try { await updateSettings({ organization });
+    toast.success("Organization settings saved"); } catch(e){ toast.error(e instanceof Error?e.message:"Could not save settings."); }
   };
 
-  const savePayments = () => {
-    updateSettings({ payments });
-    toast.success("Payment settings saved", {
-      description: "Tenant payment channels now reflect this configuration.",
-    });
+  const savePayments = async () => {
+    try { await updateSettings({ payments });
+    toast.success("Payment settings saved"); } catch(e){ toast.error(e instanceof Error?e.message:"Could not save settings."); }
   };
 
-  const saveInvoices = () => {
-    updateSettings({ invoices, penalties });
-    toast.success("Invoice and penalty settings saved", {
-      description: `Penalties are ${penalties.enabled ? "enabled" : "disabled"} at ${penalties.ratePercent}% after ${penalties.gracePeriodDays} grace days.`,
-    });
+  const saveInvoices = async () => {
+    try { await updateSettings({ invoices, penalties });
+    toast.success("Invoice and penalty settings saved"); } catch(e){ toast.error(e instanceof Error?e.message:"Could not save settings."); }
   };
 
-  const saveEbm = () => {
-    updateSettings({ ebm });
-    toast.success("EBM settings saved", {
-      description: "Genzura still never generates fiscal invoices — only references are stored.",
-    });
+  const saveEbm = async () => {
+    try { await updateSettings({ ebm });
+    toast.success("EBM settings saved"); } catch(e){ toast.error(e instanceof Error?e.message:"Could not save settings."); }
   };
 
   if (!ready) {

@@ -45,15 +45,19 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
   });
   const type = useWatch({ control: form.control, name: "type" });
 
-  const onSubmit = form.handleSubmit((values) => {
-    if (tenant) {
-      updateTenant(tenant.id, values);
-      toast.success("Tenant updated", { description: `${values.name} was saved.` });
-    } else {
-      createTenant(values);
-      toast.success("Tenant added", { description: `${values.name} is now in the tenant directory.` });
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      if (tenant) {
+        await updateTenant(tenant.id, values);
+        toast.success("Tenant updated", { description: `${values.name} was saved.` });
+      } else {
+        await createTenant(values);
+        toast.success("Tenant added", { description: `${values.name} is now in the tenant directory.` });
+      }
+      onClose();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the tenant.");
     }
-    onClose();
   });
 
   return (

@@ -466,17 +466,21 @@ export function AgreementsWorkspace() {
               Cancel
             </Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 if (!renewTarget || !renewDate) return;
                 if (renewDate <= renewTarget.startDate) {
                   toast.error("The new end date must be after the start date.");
                   return;
                 }
-                renewAgreement(renewTarget.id, renewDate);
-                toast.success("Agreement renewed", {
-                  description: `${renewTarget.reference} now ends on ${formatDate(renewDate, "long")}.`,
-                });
-                setRenewTarget(null);
+                try {
+                  await renewAgreement(renewTarget.id, renewDate);
+                  toast.success("Agreement renewed", {
+                    description: `${renewTarget.reference} now ends on ${formatDate(renewDate, "long")}.`,
+                  });
+                  setRenewTarget(null);
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "Could not renew agreement.");
+                }
               }}
             >
               Renew agreement
@@ -495,12 +499,16 @@ export function AgreementsWorkspace() {
           placeholder="e.g. Tenant relocated to a larger space…"
           confirmLabel="Terminate agreement"
           variant="destructive"
-          onSubmit={(reason) => {
-            terminateAgreement(terminateTarget.id, reason);
-            toast.success("Agreement terminated", {
-              description: `${terminateTarget.reference} was terminated and its spaces are now vacant.`,
-            });
-            setTerminateTarget(null);
+          onSubmit={async (reason) => {
+            try {
+              await terminateAgreement(terminateTarget.id, reason);
+              toast.success("Agreement terminated", {
+                description: `${terminateTarget.reference} was terminated and its spaces are now vacant.`,
+              });
+              setTerminateTarget(null);
+            } catch (error) {
+              toast.error(error instanceof Error ? error.message : "Could not terminate agreement.");
+            }
           }}
         />
       )}
