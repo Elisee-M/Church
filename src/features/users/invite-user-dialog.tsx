@@ -30,7 +30,6 @@ const ROLES: SystemUserRole[] = [
   "Administrator",
   "Accountant",
   "Property Manager",
-  "Tenant",
   "Viewer",
 ];
 
@@ -185,9 +184,7 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
                   ? "Payments, verification, expenses, invoices and reports."
                   : role === "Property Manager"
                     ? "Buildings, spaces, agreements and tenant records."
-                    : role === "Tenant"
-                      ? "Access to their own rentals, invoices, and payment history."
-                      : "Read-only access to reports and dashboards."}
+                    : "Read-only access to reports and dashboards."}
             </p>
             {mode === "create" ? (
               <p className="mt-2 text-[10px] text-muted-foreground">
