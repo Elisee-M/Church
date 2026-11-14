@@ -9,6 +9,7 @@ import {
   Plus,
   Search,
   UserCheck,
+  Trash2,
   UserRound,
   Users,
   Wallet,
@@ -18,7 +19,7 @@ import type { Tenant } from "@/types";
 import { TENANT_TYPE_LABELS } from "@/lib/constants";
 import { formatCurrency, initials } from "@/lib/utils";
 import { getTenantSummary } from "@/lib/mock-data/analytics";
-import { setTenantStatus } from "@/lib/services";
+import { deleteTenant, setTenantStatus } from "@/lib/services";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -61,6 +62,7 @@ export function TenantsWorkspace() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [dialog, setDialog] = React.useState<{ tenant?: Tenant } | null>(null);
   const [statusTarget, setStatusTarget] = React.useState<Tenant | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<Tenant | null>(null);
 
   const rows: TenantRow[] = React.useMemo(
     () =>
@@ -187,6 +189,9 @@ export function TenantsWorkspace() {
               >
                 {row.tenant.status === "active" ? <UserRound /> : <UserCheck />}
                 {row.tenant.status === "active" ? "Deactivate tenant" : "Reactivate tenant"}
+              </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(row.tenant)}>
+                <Trash2 /> Delete tenant
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -316,6 +321,29 @@ export function TenantsWorkspace() {
             toast.error(error instanceof Error ? error.message : "Could not update tenant status.");
           }
           setStatusTarget(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete tenant?"
+        description={
+          deleteTarget
+            ? `${deleteTarget.name} and all related agreements, invoices and payments will be permanently removed.`
+            : ""
+        }
+        confirmLabel="Delete tenant"
+        variant="destructive"
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          try {
+            await deleteTenant(deleteTarget.id);
+            toast.success("Tenant deleted", { description: `${deleteTarget.name} was removed.` });
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Could not delete tenant.");
+          }
+          setDeleteTarget(null);
         }}
       />
     </div>
