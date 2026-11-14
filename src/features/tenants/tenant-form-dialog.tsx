@@ -47,6 +47,7 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
       floorId: tenant?.floorId ?? "",
       roomNumber: tenant?.roomNumber ?? "",
       monthlyRent: tenant?.monthlyRent ?? 0,
+      roomsNeeded: tenant?.roomsNeeded ?? 1,
       createLoginAccount: false,
       loginPassword: "",
       notes: tenant?.notes ?? "",
@@ -230,6 +231,21 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
               min={0}
               step={1000}
               {...form.register("monthlyRent", { valueAsNumber: true })}
+            />
+          </Field>
+
+          <Field
+            label="Rooms needed"
+            htmlFor="tenant-rooms"
+            error={form.formState.errors.roomsNeeded?.message}
+            hint="Number of rooms/units this tenant rents"
+          >
+            <Input
+              id="tenant-rooms"
+              type="number"
+              min={1}
+              step={1}
+              {...form.register("roomsNeeded", { valueAsNumber: true })}
             />
           </Field>
 

@@ -17,6 +17,7 @@ export const tenantSchema = z.object({
   floorId: z.string().optional(),
   roomNumber: z.string().optional(),
   monthlyRent: z.number().min(0, "Monthly rent cannot be negative.").optional(),
+  roomsNeeded: z.number().min(1, "Enter at least one room.").optional(),
   createLoginAccount: z.boolean().optional(),
   loginPassword: z.string().optional(),
   notes: z.string().optional(),

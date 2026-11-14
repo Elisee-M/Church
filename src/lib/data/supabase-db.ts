@@ -236,6 +236,7 @@ export async function fetchDatabaseFromSupabase(): Promise<Database> {
     floorId: t.floor_id ?? undefined,
     roomNumber: t.room_number ?? undefined,
     monthlyRent: t.monthly_rent != null ? Number(t.monthly_rent) : undefined,
+    roomsNeeded: t.rooms_needed != null ? Number(t.rooms_needed) : undefined,
     linkedUserId: t.linked_user_id ?? undefined,
     since: (t.created_at ?? "").slice(0, 10),
     status: "active",

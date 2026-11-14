@@ -1,4 +1,4 @@
-import type { Database, Invoice, InvoiceStatus, Payment } from "@/types";
+import type { Database, Invoice, InvoiceStatus, Payment, Space } from "@/types";
 
 export const HISTORY_MONTHS: string[] = [];
 
@@ -100,6 +100,31 @@ export function getTenantSummary(db: Database, tenantId: string) {
     tenantAgreements.flatMap((item) => item.lineItems.map((line) => line.spaceId)),
   );
   const spaces = db.spaces.filter((space) => spaceIds.has(space.id) || space.tenantId === tenantId);
+
+  // Tenants may have a room assigned directly without a pre-created space. Expose
+  // that rented unit so the portal shows the correct occupied-space count.
+  if (spaces.length === 0 && tenant) {
+    const roomCount = Math.max(tenant.roomsNeeded ?? 1, 1);
+    const rentPerRoom = (tenant.monthlyRent ?? 0) / roomCount;
+    for (let index = 0; index < roomCount; index += 1) {
+      spaces.push({
+        id: `${tenant.id}-room-${index + 1}`,
+        code: tenant.roomNumber ? `${tenant.roomNumber}${roomCount > 1 ? `-${index + 1}` : ""}` : `Room ${index + 1}`,
+        name: tenant.roomNumber ? `Room ${tenant.roomNumber}` : "Rented room",
+        buildingId: tenant.buildingId ?? "",
+        floorId: tenant.floorId ?? "",
+        category: "commercial",
+        status: "occupied",
+        sizeSqm: 0,
+        monthlyRent: rentPerRoom,
+        tenantId: tenant.id,
+        description: "",
+        features: [],
+        history: [],
+      });
+    }
+  }
+
   const invoices = db.invoices
     .filter((invoice) => invoice.tenantId === tenantId)
     .sort((a, b) => b.issueDate.localeCompare(a.issueDate));
@@ -111,7 +136,7 @@ export function getTenantSummary(db: Database, tenantId: string) {
   const nextInvoice = [...pendingInvoices].sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0];
   const monthlyRent = agreement
     ? agreement.lineItems.reduce((sum, line) => sum + line.monthlyRent, 0)
-    : spaces.reduce((sum, space) => sum + space.monthlyRent, 0);
+    : tenant?.monthlyRent ?? spaces.reduce((sum, space) => sum + space.monthlyRent, 0);
 
   return {
     tenant,

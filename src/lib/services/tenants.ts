@@ -19,6 +19,7 @@ export async function createTenant(input: {
   floorId?: string;
   roomNumber?: string;
   monthlyRent?: number;
+  roomsNeeded?: number;
   notes?: string;
 }) {
   const supabase = createClient();
@@ -38,6 +39,7 @@ export async function createTenant(input: {
     floor_id: input.floorId || null,
     room_number: input.roomNumber || null,
     monthly_rent: input.monthlyRent ?? null,
+    rooms_needed: input.roomsNeeded ?? null,
     emergency_contact_phone: input.altPhone || null,
   });
   if (error) throw new Error(error.message);
@@ -61,6 +63,7 @@ export async function updateTenant(
     floorId?: string;
     roomNumber?: string;
     monthlyRent?: number;
+    roomsNeeded?: number;
     notes?: string;
   }>,
 ) {
@@ -79,6 +82,7 @@ export async function updateTenant(
   if (input.altPhone !== undefined) patch.emergency_contact_phone = input.altPhone;
   if (input.contactName !== undefined) patch.company_name = input.contactName;
   if (input.monthlyRent !== undefined) patch.monthly_rent = input.monthlyRent ?? null;
+  if (input.roomsNeeded !== undefined) patch.rooms_needed = input.roomsNeeded ?? null;
   const { error } = await supabase.from("tenants").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
   await refreshDatabase();
