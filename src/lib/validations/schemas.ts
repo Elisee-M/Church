@@ -122,6 +122,16 @@ export const inviteUserSchema = z.object({
 
 export type InviteUserFormValues = z.infer<typeof inviteUserSchema>;
 
+export const managedUserEditSchema = z.object({
+  name: z.string().min(2, "Enter the user's name."),
+  email: z.string().email("Enter a valid email address."),
+  phone: z.string().regex(phoneRegex, "Enter a valid Rwandan phone number."),
+  role: managedUserRoleSchema,
+  status: z.enum(["active", "suspended"]),
+});
+
+export type ManagedUserEditFormValues = z.infer<typeof managedUserEditSchema>;
+
 export const ebmSchema = z.object({
   reference: z.string().min(4, "Enter the EBM reference provided by the fiscal solution."),
   attachDocument: z.boolean(),
