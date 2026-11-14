@@ -24,6 +24,7 @@ import { EmptyState, LoadingPanel } from "@/components/shared/states";
 import { RentalInvoiceDocument } from "@/components/documents/rental-invoice";
 import { PaymentReceiptDocument } from "@/components/documents/payment-receipt";
 import { EbmReferencePanel } from "@/components/documents/ebm-panel";
+import { downloadInvoicePdf, downloadReceiptPdf } from "@/lib/pdf/download";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -181,11 +182,27 @@ export function TenantDocuments() {
                     <Button
                       variant="ghost"
                       size="icon-xs"
-                      onClick={() =>
-                        toast.message("Download prepared", {
-                          description: `Download for ${document.name} is not available yet.`,
-                        })
-                      }
+                      onClick={async () => {
+                        try {
+                          if (document.type === "payment_receipt") {
+                            const payment = db.payments.find((p) => p.id === (document.paymentId ?? document.relatedId));
+                            if (!payment) throw new Error("Receipt not found.");
+                            await downloadReceiptPdf(payment, db);
+                            return;
+                          }
+                          if (document.type === "rental_invoice") {
+                            const invoice = db.invoices.find((i) => i.id === (document.invoiceId ?? document.relatedId));
+                            if (!invoice) throw new Error("Invoice not found.");
+                            await downloadInvoicePdf(invoice, db);
+                            return;
+                          }
+                          toast.message("Download unavailable", {
+                            description: "A downloadable file is not available for this document yet.",
+                          });
+                        } catch (error) {
+                          toast.error(error instanceof Error ? error.message : "Could not download document.");
+                        }
+                      }}
                     >
                       <Download className="size-3.5" />
                       <span className="sr-only">Download</span>
@@ -218,9 +235,24 @@ export function TenantDocuments() {
           <DialogContent className="max-h-[92dvh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>Rental invoice</DialogTitle>
-              <DialogDescription>{preview.invoice.number} · rental invoice document</DialogDescription>
+              <DialogDescription>{preview.invoice.number} - rental invoice document</DialogDescription>
             </DialogHeader>
             <RentalInvoiceDocument invoice={preview.invoice} tenant={tenant} />
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await downloadInvoicePdf(preview.invoice, db);
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Could not download invoice PDF.");
+                  }
+                }}
+              >
+                <Download className="size-3.5" /> Download PDF
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       )}
@@ -236,6 +268,22 @@ export function TenantDocuments() {
             </div>
             <div className="p-4">
               <PaymentReceiptDocument payment={preview.payment} />
+            </div>
+            <div className="flex justify-end gap-2 border-t border-border p-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await downloadReceiptPdf(preview.payment, db);
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Could not download receipt PDF.");
+                  }
+                }}
+              >
+                <Download className="size-3.5" /> Download PDF
+              </Button>
+              <Button size="sm" onClick={() => setPreview(null)}>Close</Button>
             </div>
           </DialogContent>
         </Dialog>

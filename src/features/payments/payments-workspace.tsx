@@ -36,6 +36,7 @@ import { LoadingPanel } from "@/components/shared/states";
 import { DataTable, type DataTableColumn } from "@/components/tables/data-table";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 import { PaymentReceiptDocument } from "@/components/documents/payment-receipt";
+import { downloadReceiptPdf } from "@/lib/pdf/download";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -539,11 +540,13 @@ export function PaymentsWorkspace({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start"
-                    onClick={() =>
-                      toast.message("Download unavailable", {
-                        description: "PDF export is not available yet.",
-                      })
-                    }
+                    onClick={async () => {
+                      try {
+                        await downloadReceiptPdf(selected, db);
+                      } catch (error) {
+                        toast.error(error instanceof Error ? error.message : "Could not download receipt PDF.");
+                      }
+                    }}
                   >
                     <Download className="size-3.5" /> Download receipt
                   </Button>

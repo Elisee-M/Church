@@ -28,6 +28,7 @@ import { EmptyState } from "@/components/shared/states";
 import { RentalInvoiceDocument } from "@/components/documents/rental-invoice";
 import { PaymentReceiptDocument } from "@/components/documents/payment-receipt";
 import { EbmReferencePanel } from "@/components/documents/ebm-panel";
+import { downloadInvoicePdf, downloadReceiptPdf } from "@/lib/pdf/download";
 import { RecordPaymentDialog } from "@/features/payments/record-payment-dialog";
 import { EbmReferenceDialog } from "./ebm-reference-dialog";
 import { Button } from "@/components/ui/button";
@@ -283,11 +284,13 @@ export function InvoiceDetail({
                   variant="outline"
                   className="w-full justify-start"
                   size="sm"
-                  onClick={() =>
-                    toast.message("Download unavailable", {
-                      description: "PDF export is not available yet.",
-                    })
-                  }
+                  onClick={async () => {
+                    try {
+                      await downloadInvoicePdf(invoice, db);
+                    } catch (error) {
+                      toast.error(error instanceof Error ? error.message : "Could not download invoice PDF.");
+                    }
+                  }}
                 >
                   <Download className="size-3.5" /> Download invoice PDF
                 </Button>
@@ -381,11 +384,13 @@ export function InvoiceDetail({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  toast.message("Download unavailable", {
-                    description: "PDF export is not available yet.",
-                  })
-                }
+                onClick={async () => {
+                  try {
+                    await downloadReceiptPdf(receipt, db);
+                  } catch (error) {
+                    toast.error(error instanceof Error ? error.message : "Could not download receipt PDF.");
+                  }
+                }}
               >
                 <Download className="size-3.5" /> Download
               </Button>
