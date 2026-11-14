@@ -131,7 +131,8 @@ export async function simulateMobileMoneyPayment(input: {
 export async function submitBankTransferProof(input: {
   invoiceId: string;
   amount: number;
-  bankName: string;
+  method?: "mtn_momo" | "airtel_money" | "bank_transfer" | "cash";
+  bankName?: string;
   reference: string;
   proofName?: string;
   proofPath?: string;
@@ -143,18 +144,27 @@ export async function submitBankTransferProof(input: {
     .eq("id", input.invoiceId)
     .maybeSingle();
   if (invErr || !inv) throw new Error(invErr?.message || "Invoice not found.");
+  const method = input.method ?? "bank_transfer";
+  const dbMethod =
+    method === "mtn_momo"
+      ? "mtn_mobile_money"
+      : method === "airtel_money"
+        ? "airtel_money"
+        : method === "cash"
+          ? "cash"
+          : "bank_transfer";
   const { error } = await supabase.from("payments").insert({
     organization_id: (inv as { organization_id: string }).organization_id,
     tenant_id: (inv as { tenant_id: string }).tenant_id,
     invoice_id: input.invoiceId,
     amount: Math.round(input.amount),
-    payment_method: "bank_transfer",
-    provider: input.bankName || "bank",
-    transaction_reference: input.reference.trim() || `BNK-${Date.now().toString().slice(-8)}`,
+    payment_method: dbMethod,
+    provider: method === "bank_transfer" ? input.bankName || "bank" : method,
+    transaction_reference: input.reference.trim() || `${method.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-8)}`,
     payment_status: "under_review",
     payment_date: new Date().toISOString(),
     notes: [
-      "Bank transfer submitted. Awaiting verification.",
+      `${method === "bank_transfer" ? "Bank transfer" : method === "mtn_momo" ? "MTN MoMo" : method === "airtel_money" ? "Airtel Money" : "Cash"} payment submitted. Awaiting verification.`,
       input.proofPath ? `Proof path: ${input.proofPath}` : input.proofName ? `Proof: ${input.proofName}` : null,
     ].filter(Boolean).join(" "),
   });

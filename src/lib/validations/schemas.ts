@@ -164,8 +164,9 @@ export const ebmSchema = z.object({
 export type EbmFormValues = z.infer<typeof ebmSchema>;
 
 export const bankProofSchema = z.object({
-  bankName: z.string().min(2, "Select or enter the bank name."),
-  reference: z.string().min(4, "Enter the bank transfer reference."),
+  method: z.enum(["mtn_momo", "airtel_money", "bank_transfer", "cash"]),
+  bankName: z.string().optional(),
+  reference: z.string().min(4, "Enter the payment reference."),
   amount: z.number().min(1, "Enter the transferred amount."),
   proofName: z.string().min(1, "Attach proof of payment."),
 });

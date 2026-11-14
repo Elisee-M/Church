@@ -88,6 +88,7 @@ export function TenantPay() {
   const bankForm = useForm<BankProofFormValues>({
     resolver: zodResolver(bankProofSchema),
     values: {
+      method: "bank_transfer",
       bankName: db.settings.payments.bankName,
       reference: "",
       amount: balance,
@@ -178,6 +179,7 @@ export function TenantPay() {
       await submitBankTransferProof({
         invoiceId: invoice.id,
         amount: values.amount,
+        method: values.method,
         bankName: values.bankName,
         reference: values.reference,
         proofName: proofFile?.name || values.proofName || "transfer-proof.pdf",
@@ -458,10 +460,32 @@ export function TenantPay() {
                           {...bankForm.register("amount", { valueAsNumber: true })}
                         />
                       </Field>
+                      <Field label="Payment method" htmlFor="bank-method" error={bankForm.formState.errors.method?.message}>
+                        <Select
+                          value={bankForm.watch("method")}
+                          onValueChange={(value) =>
+                            bankForm.setValue("method", value as BankProofFormValues["method"], { shouldValidate: true })
+                          }
+                        >
+                          <SelectTrigger id="bank-method">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mtn_momo">MTN MoMo</SelectItem>
+                            <SelectItem value="airtel_money">Airtel Money</SelectItem>
+                            <SelectItem value="cash">Cash</SelectItem>
+                            <SelectItem value="bank_transfer">Bank transfer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    </div>
+
+                    {bankForm.watch("method") === "bank_transfer" && (
                       <Field label="Bank name" htmlFor="bank-name" error={bankForm.formState.errors.bankName?.message}>
                         <Input id="bank-name" {...bankForm.register("bankName")} />
                       </Field>
-                    </div>
+                    )}
+
 
                     <Field label="Transfer reference" htmlFor="bank-ref" error={bankForm.formState.errors.reference?.message}>
                       <Input id="bank-ref" placeholder="e.g. BK-TRF-008821" {...bankForm.register("reference")} />

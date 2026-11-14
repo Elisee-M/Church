@@ -27,6 +27,7 @@ export function CommandSearch() {
   const db = useDatabase();
   const { t } = useTranslation();
   const role = currentRole(pathname);
+  const currentTenantId = useCurrentTenantId();
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -61,7 +62,7 @@ export function CommandSearch() {
           .slice(0, 4);
 
   const invoices = db.invoices
-    .filter((invoice) => (role === "tenant" ? invoice.tenantId === (useCurrentTenantId()) : true))
+    .filter((invoice) => (role === "tenant" ? invoice.tenantId === currentTenantId : true))
     .filter(
       (invoice) =>
         invoice.number.toLowerCase().includes(normalized) ||
