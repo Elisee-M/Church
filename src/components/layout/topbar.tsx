@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { CommandSearch } from "./command-search";
 import { LanguageSwitcher } from "./language-switcher";
 import { NotificationsMenu } from "./notifications-menu";
-import { RoleSwitcher } from "./role-switcher";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
@@ -45,7 +44,6 @@ export function Topbar({ role, onMenu }: { role: Role; onMenu: () => void }) {
           <div className="hidden md:block">
             <CommandSearch />
           </div>
-          <RoleSwitcher />
           <NotificationsMenu />
           <ThemeToggle />
           <div className="hidden sm:block">

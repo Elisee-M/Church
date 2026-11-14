@@ -8,7 +8,7 @@ import { useDatabase } from "@/hooks/use-database";
 import { navForRole } from "@/lib/navigation";
 import { useTranslation } from "@/lib/providers/locale-provider";
 import { formatCurrency } from "@/lib/utils";
-import { currentRole } from "./role-switcher";
+import { currentRole } from "@/lib/auth/current-role";
 import {
   Dialog,
   DialogContent,
