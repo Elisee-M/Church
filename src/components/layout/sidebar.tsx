@@ -136,17 +136,6 @@ export function Sidebar({ role, collapsed, mobile, onToggle, onNavigate }: Sideb
       </nav>
 
       <div className="shrink-0 border-t border-sidebar-border p-3">
-        {!collapsed || mobile ? (
-          <div className="mb-2 rounded-lg border border-sidebar-border bg-accent/60 p-3 dark:bg-white/[0.03]">
-            <div className="flex items-center gap-2">
-              <CircleDot className="size-3.5 text-success" />
-              <p className="text-[11px] font-semibold">Demo workspace</p>
-            </div>
-            <p className="mt-1 text-[10px] leading-relaxed text-sidebar-muted">
-              Frontend prototype · mock data only. No real payments are processed.
-            </p>
-          </div>
-        ) : null}
         {!mobile && onToggle && (
           <button
             onClick={onToggle}

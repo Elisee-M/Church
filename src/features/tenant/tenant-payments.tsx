@@ -292,7 +292,7 @@ export function TenantPayments() {
                 size="sm"
                 onClick={() =>
                   toast.message("Receipt download prepared", {
-                    description: "PDF export is simulated in this frontend prototype.",
+                    description: "PDF export is not available yet.",
                   })
                 }
               >

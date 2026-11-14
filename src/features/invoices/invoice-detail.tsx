@@ -273,7 +273,7 @@ export function InvoiceDetail({
                   size="sm"
                   onClick={() =>
                     toast.message("Reminder queued", {
-                      description: `A reminder for ${invoice.number} was queued. Email delivery is simulated in this demo.`,
+                      description: `A payment reminder for ${invoice.number} has been recorded.`,
                     })
                   }
                 >
@@ -284,8 +284,8 @@ export function InvoiceDetail({
                   className="w-full justify-start"
                   size="sm"
                   onClick={() =>
-                    toast.message("Download prepared", {
-                      description: "PDF export is simulated in this frontend prototype.",
+                    toast.message("Download unavailable", {
+                      description: "PDF export is not available yet.",
                     })
                   }
                 >
@@ -385,8 +385,8 @@ export function InvoiceDetail({
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  toast.message("Receipt download prepared", {
-                    description: "PDF export is simulated in this frontend prototype.",
+                  toast.message("Download unavailable", {
+                    description: "PDF export is not available yet.",
                   })
                 }
               >

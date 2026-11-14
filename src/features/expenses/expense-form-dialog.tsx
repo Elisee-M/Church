@@ -174,8 +174,7 @@ export function ExpenseFormDialog({
           </Field>
 
           <div className="rounded-lg bg-accent/70 px-3 py-2.5 text-[10.5px] leading-relaxed text-muted-foreground dark:bg-white/[0.04]">
-            Receipt attachments are simulated in this prototype. Expense records are independent of
-            tenant invoices and payments.
+            Expense records are independent of tenant invoices and payments.
           </div>
 
           <DialogFooter>

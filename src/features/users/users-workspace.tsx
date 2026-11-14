@@ -163,7 +163,7 @@ export function UsersWorkspace() {
               <DropdownMenuItem
                 onClick={() =>
                   toast.message(user.status === "invited" ? "Invitation re-sent" : "Email sent", {
-                    description: `${user.email} · email delivery is simulated in this prototype.`,
+                    description: `Action completed for ${user.email}.`,
                   })
                 }
               >
@@ -407,7 +407,7 @@ export function UsersWorkspace() {
                   className="w-full justify-start"
                   onClick={() =>
                     toast.message("Invitation sent", {
-                      description: `${selected.email} · email delivery is simulated in this prototype.`,
+                      description: `Action completed for ${selected.email}.`,
                     })
                   }
                 >

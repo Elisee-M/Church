@@ -122,16 +122,16 @@ export function SettingsWorkspace() {
                 <div className="flex-1">
                   <p className="text-[11.5px] font-medium">Workspace logo</p>
                   <p className="text-[10px] text-muted-foreground">
-                    The original transparent logo is preserved in the repository.
+                    The workspace logo used across the application.
                   </p>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    toast.message("Logo replacement is simulated", {
+                    toast.message("Logo replacement unavailable", {
                       description:
-                        "Uploading a new logo is disabled in this frontend prototype to preserve the supplied brand asset.",
+                        "Uploading a new logo is not available yet. The current brand asset is preserved.",
                     })
                   }
                 >

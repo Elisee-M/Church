@@ -182,7 +182,7 @@ export function TenantDocuments() {
                       size="icon-xs"
                       onClick={() =>
                         toast.message("Download prepared", {
-                          description: `${document.name} — file download is simulated in this prototype.`,
+                          description: `Download for ${document.name} is not available yet.`,
                         })
                       }
                     >

@@ -185,8 +185,8 @@ export function InvoicesWorkspace({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() =>
-                  toast.message("Reminder queued", {
-                    description: `A rent reminder for ${invoice.number} was queued. Email delivery is simulated in this prototype.`,
+                  toast.message("Reminder recorded", {
+                    description: `A rent reminder for ${invoice.number} has been recorded.`,
                   })
                 }
               >

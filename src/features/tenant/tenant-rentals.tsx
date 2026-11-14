@@ -318,7 +318,7 @@ export function TenantRentals() {
                 onClick={() =>
                   toast.message("Message prepared", {
                     description:
-                      "Contacting the property team is simulated in this frontend prototype.",
+                      "Please contact the property team using the details above.",
                   })
                 }
               >

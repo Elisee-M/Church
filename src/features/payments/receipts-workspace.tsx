@@ -406,8 +406,8 @@ export function ReceiptsWorkspace() {
                 variant="outline"
                 size="sm"
                 onClick={() =>
-                  toast.message("Receipt download prepared", {
-                    description: "PDF export is simulated in this frontend prototype.",
+                  toast.message("Download unavailable", {
+                    description: "PDF export is not available yet.",
                   })
                 }
               >

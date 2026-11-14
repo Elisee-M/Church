@@ -392,8 +392,8 @@ export function AgreementsWorkspace() {
                     variant="ghost"
                     size="icon-xs"
                     onClick={() =>
-                      toast.message("Document preview", {
-                        description: "This frontend prototype does not include the real signed PDF.",
+                      toast.message("Document not available", {
+                        description: "A signed agreement document has not been attached yet.",
                       })
                     }
                   >
