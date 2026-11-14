@@ -257,7 +257,7 @@ export function AgreementsWorkspace() {
           searchPlaceholder="Search by reference, tenant or space code…"
           onRowClick={(agreement) => setSelectedId(agreement.id)}
           emptyTitle="No agreements match"
-          emptyDescription="Create an agreement to assign vacant spaces to a tenant."
+          emptyDescription="Create an agreement for a tenant and assign the rented spaces or rooms."
           emptyAction={
             <Button variant="outline" size="sm" onClick={() => setDialog({})}>
               <Plus className="size-3.5" /> New agreement
