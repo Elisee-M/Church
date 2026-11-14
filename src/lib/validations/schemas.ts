@@ -17,7 +17,19 @@ export const tenantSchema = z.object({
   floorId: z.string().optional(),
   roomNumber: z.string().optional(),
   monthlyRent: z.number().min(0, "Monthly rent cannot be negative.").optional(),
+  createLoginAccount: z.boolean().optional(),
+  loginPassword: z.string().optional(),
   notes: z.string().optional(),
+}).superRefine((val, ctx) => {
+  if (val.createLoginAccount) {
+    if (!val.loginPassword || val.loginPassword.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["loginPassword"],
+        message: "Set an initial password (at least 8 characters) for the tenant account.",
+      });
+    }
+  }
 });
 
 export type TenantFormValues = z.infer<typeof tenantSchema>;

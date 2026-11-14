@@ -5,7 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import type { Tenant } from "@/types";
-import { createTenant, updateTenant } from "@/lib/services";
+import { createTenant, createTenantWithAccount, updateTenant } from "@/lib/services";
 import { tenantSchema, type TenantFormValues } from "@/lib/validations/schemas";
 import { useDatabase } from "@/hooks/use-database";
 import { Field } from "@/components/shared/form-field";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -46,10 +47,13 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
       floorId: tenant?.floorId ?? "",
       roomNumber: tenant?.roomNumber ?? "",
       monthlyRent: tenant?.monthlyRent ?? 0,
+      createLoginAccount: false,
+      loginPassword: "",
       notes: tenant?.notes ?? "",
     },
   });
   const type = useWatch({ control: form.control, name: "type" });
+  const createLoginAccount = useWatch({ control: form.control, name: "createLoginAccount" });
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
@@ -57,8 +61,32 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
         await updateTenant(tenant.id, values);
         toast.success("Tenant updated", { description: `${values.name} was saved.` });
       } else {
-        await createTenant(values);
-        toast.success("Tenant added", { description: `${values.name} is now in the tenant directory.` });
+        if (values.createLoginAccount) {
+          await createTenantWithAccount({
+            type: values.type,
+            name: values.name,
+            contactName: values.contactName,
+            email: values.email,
+            phone: values.phone,
+            altPhone: values.altPhone,
+            nationalId: values.nationalId,
+            tin: values.tin,
+            companyReg: values.companyReg,
+            address: values.address,
+            buildingId: values.buildingId,
+            floorId: values.floorId,
+            roomNumber: values.roomNumber,
+            monthlyRent: values.monthlyRent,
+            notes: values.notes,
+            loginPassword: values.loginPassword || "",
+          });
+          toast.success("Tenant and login account created", {
+            description: `${values.name} can now sign in and submit payment proof.`,
+          });
+        } else {
+          await createTenant(values);
+          toast.success("Tenant added", { description: `${values.name} is now in the tenant directory.` });
+        }
       }
       onClose();
     } catch (error) {
@@ -72,7 +100,7 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
         <DialogHeader>
           <DialogTitle>{tenant ? "Edit tenant" : "Add tenant"}</DialogTitle>
           <DialogDescription>
-            Tenant records hold contact and identification details. Rent is assigned through agreements.
+            Add tenant details, assigned room/location, and monthly rent. Optionally create a tenant login account so they can sign in and submit payment proof.
           </DialogDescription>
         </DialogHeader>
 
@@ -204,6 +232,39 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
               {...form.register("monthlyRent", { valueAsNumber: true })}
             />
           </Field>
+
+          {!tenant && (
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-medium">Create tenant login account</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Tenant can sign in to view invoices and submit payment proof.
+                  </p>
+                </div>
+                <Switch
+                  checked={!!createLoginAccount}
+                  onCheckedChange={(checked) => form.setValue("createLoginAccount", checked, { shouldValidate: true })}
+                />
+              </div>
+              {createLoginAccount && (
+                <Field
+                  label="Initial password"
+                  htmlFor="tenant-login-password"
+                  error={form.formState.errors.loginPassword?.message}
+                  hint="Set an initial password (min. 8 characters). The tenant account will be auto-confirmed."
+                >
+                  <Input
+                    id="tenant-login-password"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Enter initial password"
+                    {...form.register("loginPassword")}
+                  />
+                </Field>
+              )}
+            </div>
+          )}
 
           <Field label="Notes" htmlFor="tenant-notes" optional>
             <Textarea

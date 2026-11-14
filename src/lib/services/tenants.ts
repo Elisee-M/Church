@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { refreshDatabase } from "./store";
+import { createTenantWithAccountAction } from "@/lib/actions/admin-tenants";
 
 export async function createTenant(input: {
   type: "individual" | "company";
@@ -80,6 +81,28 @@ export async function updateTenant(
   if (input.monthlyRent !== undefined) patch.monthly_rent = input.monthlyRent ?? null;
   const { error } = await supabase.from("tenants").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
+  await refreshDatabase();
+}
+
+export async function createTenantWithAccount(input: {
+  type: "individual" | "company";
+  name: string;
+  contactName?: string;
+  email: string;
+  phone: string;
+  altPhone?: string;
+  nationalId?: string;
+  tin?: string;
+  companyReg?: string;
+  address: string;
+  buildingId?: string;
+  floorId?: string;
+  roomNumber?: string;
+  monthlyRent?: number;
+  notes?: string;
+  loginPassword: string;
+}) {
+  await createTenantWithAccountAction(input);
   await refreshDatabase();
 }
 
