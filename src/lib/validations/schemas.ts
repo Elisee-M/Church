@@ -60,14 +60,15 @@ export const buildingSchema = z.object({
 export type BuildingFormValues = z.infer<typeof buildingSchema>;
 
 const agreementLineSchema = z.object({
-  spaceId: z.string().min(1),
+  spaceId: z.string().optional(),
   monthlyRent: z.number().min(1, "Rent must be greater than zero."),
 });
 
 export const agreementSchema = z
   .object({
     tenantId: z.string().min(1, "Select a tenant."),
-    lineItems: z.array(agreementLineSchema).min(1, "Select at least one rental space."),
+    monthlyRent: z.number().min(1, "Rent must be greater than zero."),
+    lineItems: z.array(agreementLineSchema).optional(),
     startDate: z.string().min(1, "Select a start date."),
     endDate: z.string().min(1, "Select an end date."),
     deposit: z.number().min(0, "Deposit cannot be negative."),

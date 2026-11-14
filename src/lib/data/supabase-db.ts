@@ -198,7 +198,9 @@ export async function fetchDatabaseFromSupabase(): Promise<Database> {
   const spaceTenant = new Map<string, string>();
   for (const a of agreementsRaw) {
     if (["active", "expiring", "draft"].includes(a.status)) {
-      for (const l of spacesByAgreement.get(a.id) ?? []) spaceTenant.set(l.spaceId, a.tenant_id);
+      for (const l of spacesByAgreement.get(a.id) ?? []) {
+        if (l.spaceId) spaceTenant.set(l.spaceId, a.tenant_id);
+      }
     }
   }
 

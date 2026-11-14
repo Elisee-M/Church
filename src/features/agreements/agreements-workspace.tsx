@@ -331,32 +331,31 @@ export function AgreementsWorkspace() {
 
               <div>
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                  Covered spaces
+                  Rental details
                 </p>
                 <div className="space-y-1.5">
-                  {selected.lineItems.map((line) => {
-                    const space = db.spaces.find((item) => item.id === line.spaceId);
-                    const building = db.buildings.find((item) => item.id === space?.buildingId);
-                    return (
-                      <div
-                        key={line.spaceId}
-                        className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-[11.5px] font-medium">
-                            {space?.code} · {space?.name}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {building?.name} · {space ? SPACE_CATEGORY_LABELS[space.category] : ""}
-                          </p>
-                        </div>
-                        <span className="shrink-0 text-[11.5px] font-semibold">{formatCurrency(line.monthlyRent)}</span>
-                      </div>
-                    );
-                  })}
+                  <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate text-[11.5px] font-medium">
+                        {db.tenants.find((tenant) => tenant.id === selected.tenantId)?.name ?? "Tenant"}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {(() => {
+                          const tenant = db.tenants.find((item) => item.id === selected.tenantId);
+                          const building = db.buildings.find((item) => item.id === tenant?.buildingId);
+                          const floor = db.floors.find((item) => item.id === tenant?.floorId);
+                          return [building?.name, floor?.name, tenant?.roomNumber ? "Room " + tenant.roomNumber : ""]
+                            .filter(Boolean)
+                            .join(" - ");
+                        })()}
+                      </p>
+                    </div>
+                    <span className="shrink-0 text-[11.5px] font-semibold">
+                      {formatCurrency(selected.lineItems.reduce((sum, line) => sum + line.monthlyRent, 0))}
+                    </span>
+                  </div>
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-3 text-[11px]">
                 <div className="rounded-lg border border-border px-3 py-2.5">
                   <p className="text-[9.5px] uppercase tracking-wide text-muted-foreground">Late penalty</p>

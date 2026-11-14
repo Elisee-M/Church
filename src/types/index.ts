@@ -71,7 +71,7 @@ export type Tenant = {
 export type AgreementStatus = "active" | "expiring" | "expired" | "draft" | "terminated";
 
 export type AgreementLine = {
-  spaceId: string;
+  spaceId?: string;
   monthlyRent: number;
 };
 

@@ -60,7 +60,7 @@ export async function createAgreement(input: AgreementInput) {
   if (input.lineItems.length) {
     const rows = input.lineItems.map((line) => ({
       agreement_id: agreement.id,
-      space_id: line.spaceId,
+      space_id: line.spaceId || null,
       monthly_rent_amount: line.monthlyRent,
       start_date: input.startDate,
       end_date: input.endDate,
@@ -68,8 +68,10 @@ export async function createAgreement(input: AgreementInput) {
     const { error: sErr } = await supabase.from("agreement_spaces").insert(rows);
     if (sErr) throw new Error(sErr.message);
     // mark spaces occupied
-    const spaceIds = input.lineItems.map((l) => l.spaceId);
-    await supabase.from("spaces").update({ occupancy_status: "occupied" }).in("id", spaceIds);
+    const spaceIds = input.lineItems.map((l) => l.spaceId).filter(Boolean) as string[];
+    if (spaceIds.length) {
+      await supabase.from("spaces").update({ occupancy_status: "occupied" }).in("id", spaceIds);
+    }
   }
   await refreshDatabase();
   return agreement.id as string;
@@ -94,17 +96,18 @@ export async function updateAgreement(id: string, patch: Partial<AgreementInput>
       .select("id, space_id")
       .eq("agreement_id", id);
     const prev = (existing ?? []) as Array<{ id: string; space_id: string }>;
-    const nextIds = new Set(patch.lineItems.map((l) => l.spaceId));
-    const removed = prev.filter((p) => !nextIds.has(p.space_id));
+    const nextIds = new Set(patch.lineItems.map((l) => l.spaceId ?? null));
+    const removed = prev.filter((p) => !nextIds.has(p.space_id ?? null));
     if (removed.length) {
       await supabase.from("agreement_spaces").delete().in("id", removed.map((r) => r.id));
-      await supabase
-        .from("spaces")
-        .update({ occupancy_status: "vacant" })
-        .in("id", removed.map((r) => r.space_id));
+      const removedSpaceIds = removed.map((r) => r.space_id).filter(Boolean) as string[];
+      if (removedSpaceIds.length) {
+        await supabase.from("spaces").update({ occupancy_status: "vacant" }).in("id", removedSpaceIds);
+      }
     }
     for (const line of patch.lineItems) {
-      const found = prev.find((p) => p.space_id === line.spaceId);
+      const spaceId = line.spaceId ?? null;
+      const found = prev.find((p) => (p.space_id ?? null) === spaceId);
       if (found) {
         await supabase
           .from("agreement_spaces")
@@ -113,13 +116,15 @@ export async function updateAgreement(id: string, patch: Partial<AgreementInput>
       } else {
         await supabase.from("agreement_spaces").insert({
           agreement_id: id,
-          space_id: line.spaceId,
+          space_id: spaceId,
           monthly_rent_amount: line.monthlyRent,
           start_date: patch.startDate ?? new Date().toISOString().slice(0, 10),
           end_date: patch.endDate ?? null,
         });
       }
-      await supabase.from("spaces").update({ occupancy_status: "occupied" }).eq("id", line.spaceId);
+      if (spaceId) {
+        await supabase.from("spaces").update({ occupancy_status: "occupied" }).eq("id", spaceId);
+      }
     }
   }
   await refreshDatabase();
@@ -135,7 +140,7 @@ export async function terminateAgreement(id: string, reason: string) {
     .eq("id", id);
   if (error) throw new Error(error.message);
   const { data: lines } = await supabase.from("agreement_spaces").select("space_id").eq("agreement_id", id);
-  const ids = (lines ?? []).map((l: { space_id: string }) => l.space_id).filter(Boolean);
+  const ids = (lines ?? []).map((l: { space_id: string | null }) => l.space_id).filter(Boolean) as string[];
   if (ids.length) await supabase.from("spaces").update({ occupancy_status: "vacant" }).in("id", ids);
   await refreshDatabase();
 }

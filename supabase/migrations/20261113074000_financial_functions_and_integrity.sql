@@ -394,7 +394,10 @@ begin
 
     insert into public.invoice_items (invoice_id, space_id, description, quantity, unit_price, total)
     select v_invoice_id, ags.space_id,
-           'Monthly rent - ' || coalesce(sp.space_code, '') || ' ' || coalesce(sp.name, ''),
+           case when sp.space_code is not null or sp.name is not null
+             then 'Monthly rent - ' || coalesce(sp.space_code, '') || ' ' || coalesce(sp.name, '')
+             else 'Monthly rent'
+           end,
            1, ags.monthly_rent_amount, ags.monthly_rent_amount
     from public.agreement_spaces ags
     left join public.spaces sp on sp.id = ags.space_id

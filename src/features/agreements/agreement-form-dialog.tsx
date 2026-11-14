@@ -50,13 +50,11 @@ export function AgreementFormDialog({
     resolver: zodResolver(agreementSchema),
     defaultValues: {
       tenantId: agreement?.tenantId ?? defaultTenantId ?? "",
-      lineItems:
-        agreement?.lineItems ??
-        (defaultTenantId
-          ? db.spaces
-              .filter((space) => space.tenantId === defaultTenantId)
-              .map((space) => ({ spaceId: space.id, monthlyRent: space.monthlyRent }))
-          : []),
+      monthlyRent:
+        agreement?.lineItems?.[0]?.monthlyRent ??
+        db.tenants.find((tenant) => tenant.id === (agreement?.tenantId ?? defaultTenantId))?.monthlyRent ??
+        0,
+      lineItems: agreement?.lineItems ?? [],
       startDate: agreement?.startDate ?? today.toISOString().slice(0, 10),
       endDate: agreement?.endDate ?? yearFromNow.toISOString().slice(0, 10),
       deposit: agreement?.deposit ?? 0,
@@ -68,13 +66,20 @@ export function AgreementFormDialog({
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "lineItems" });
   const lineItems = useWatch({ control: form.control, name: "lineItems" }) ?? [];
   const tenantId = useWatch({ control: form.control, name: "tenantId" });
+  const monthlyRent = useWatch({ control: form.control, name: "monthlyRent" });
   const penaltyEnabled = useWatch({ control: form.control, name: "penaltyEnabled" });
   const startDate = useWatch({ control: form.control, name: "startDate" });
   const endDate = useWatch({ control: form.control, name: "endDate" });
-  const totalRent = lineItems.reduce((sum, line) => sum + (Number(line.monthlyRent) || 0), 0);
+  const totalRent = Number(monthlyRent) || 0;
 
   const selectedTenant = db.tenants.find((t) => t.id === tenantId);
   const defaultMonthlyRent = selectedTenant?.monthlyRent ?? 0;
+
+  React.useEffect(() => {
+    if (selectedTenant?.monthlyRent && !agreement) {
+      form.setValue("monthlyRent", selectedTenant.monthlyRent, { shouldValidate: true });
+    }
+  }, [selectedTenant, agreement, form]);
 
   // Allow selecting spaces for the chosen tenant (no vacancy restriction). Conflicts are enforced by DB constraints.
   const selectableSpaces = db.spaces.filter((space) =>
@@ -94,13 +99,9 @@ export function AgreementFormDialog({
   };
 
   const onSubmit = form.handleSubmit(async (values) => {
-    if (values.lineItems.length === 0) {
-      toast.error("Select at least one rental space.");
-      return;
-    }
     const payload = {
       tenantId: values.tenantId,
-      lineItems: values.lineItems,
+      lineItems: [{ monthlyRent: values.monthlyRent }],
       startDate: values.startDate,
       endDate: values.endDate,
       deposit: values.deposit,
@@ -158,63 +159,18 @@ export function AgreementFormDialog({
             </Select>
           </Field>
 
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <p className="text-[11.5px] font-medium">Rental spaces</p>
-              <span className="text-[10px] text-muted-foreground">
-                {lineItems.length} selected · {formatCurrency(totalRent)} / month
-              </span>
-            </div>
-            {form.formState.errors.lineItems && (
-              <p className="mb-2 text-[11px] text-destructive">
-                {form.formState.errors.lineItems.message ??
-                  "Select at least one rental space."}
-              </p>
-            )}
-            <div className="max-h-[240px] space-y-3 overflow-y-auto rounded-lg border border-border p-3 thin-scrollbar">
-              {grouped.length === 0 && (
-                <p className="py-4 text-center text-[11px] text-muted-foreground">
-                  {db.spaces.length === 0
-                    ? "No spaces found. Add spaces in Properties first."
-                    : "No spaces available to select."}
-                </p>
-              )}
-              {grouped.map(({ building, spaces }) => (
-                <div key={building.id}>
-                  <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                    {building.name}
-                  </p>
-                  <div className="grid gap-1.5 sm:grid-cols-2">
-                    {spaces.map((space) => {
-                      const selected = lineItems.some((line) => line.spaceId === space.id);
-                      return (
-                        <label
-                          key={space.id}
-                          className={`flex cursor-pointer items-start gap-2 rounded-md border p-2 transition ${
-                            selected ? "border-primary/40 bg-accent/50 dark:border-foreground/30" : "border-border hover:bg-muted/40"
-                          }`}
-                        >
-                          <Checkbox
-                            checked={selected}
-                            onCheckedChange={() => toggleSpace(space.id, space.monthlyRent)}
-                            className="mt-0.5"
-                          />
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[11px] font-medium">
-                              {space.code} · {space.name}
-                            </span>
-                            <span className="block text-[9.5px] text-muted-foreground">
-                              {SPACE_CATEGORY_LABELS[space.category]} · {formatCurrency(space.monthlyRent, true)}
-                            </span>
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="rounded-lg border border-border bg-muted/25 p-3 text-[11.5px]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">Rental location</p>
+            <p className="mt-1">
+              {db.buildings.find((building) => building.id === selectedTenant?.buildingId)?.name ?? "Building"}
+              {selectedTenant?.floorId ? " - " + (db.floors.find((floor) => floor.id === selectedTenant.floorId)?.name ?? "Floor") : ""}
+              {selectedTenant?.roomNumber ? " - Room " + selectedTenant.roomNumber : ""}
+            </p>
           </div>
+
+          <Field label="Monthly rent" htmlFor="agreement-rent" error={form.formState.errors.monthlyRent?.message} hint="RWF per month">
+            <Input id="agreement-rent" type="number" min={1} step={1000} {...form.register("monthlyRent", { valueAsNumber: true })} />
+          </Field>
 
           {fields.length > 0 && (
             <div className="space-y-2 rounded-lg border border-border bg-muted/25 p-3">
