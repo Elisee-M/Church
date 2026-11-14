@@ -133,6 +133,9 @@ export async function fetchDatabaseFromSupabase(): Promise<Database> {
     supabase.from("organization_settings").select("*").limit(1).maybeSingle(),
   ]);
 
+  if (profilesRes.error) console.error("[fetchDatabase] profiles:", profilesRes.error.message);
+  if (userRolesRes.error) console.error("[fetchDatabase] user_roles:", userRolesRes.error.message);
+
   const org = orgRes.data as any;
   const settingsBase = emptySettings();
   if (org) {

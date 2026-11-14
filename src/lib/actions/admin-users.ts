@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getUserRole } from "@/lib/auth/roles";
+import type { SystemUser, SystemUserRole } from "@/types";
 
 type ManagedUserRole = "Administrator" | "Accountant" | "Property Manager" | "Viewer" | "Tenant";
 
@@ -174,4 +175,54 @@ export async function deleteUserAction(userId: string) {
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) throw new Error(error.message);
   return { deleted: true };
+}
+
+function roleLabel(rs: string[] = []): SystemUserRole {
+  if (rs.includes("admin")) return "Administrator";
+  if (rs.includes("accountant")) return "Accountant";
+  if (rs.includes("tenant")) return "Tenant";
+  return "Viewer";
+}
+
+function permissionsForRole(role: string): string[] {
+  if (role === "Administrator") return ["Manage users and roles", "Manage properties and agreements", "View and manage finances", "Access all reports and settings"];
+  if (role === "Accountant") return ["Record and verify payments", "Manage invoices and expenses", "View financial reports"];
+  if (role === "Tenant") return ["View own rentals and invoices", "View payment history and receipts"];
+  return ["View assigned information"];
+}
+
+export async function listManagedUsersAction(): Promise<SystemUser[]> {
+  const { orgId } = await requireAdminAndOrg();
+  const admin = createAdminClient();
+
+  const [{ data: profiles, error: pErr }, { data: roles, error: rErr }] = await Promise.all([
+    admin.from("profiles").select("*").order("created_at", { ascending: false }),
+    admin.from("user_roles").select("*").eq("organization_id", orgId),
+  ]);
+  if (pErr) throw new Error(pErr.message);
+  if (rErr) throw new Error(rErr.message);
+
+  const rolesByUser = new Map<string, string[]>();
+  for (const r of roles ?? []) {
+    const list = rolesByUser.get((r as any).user_id) ?? [];
+    list.push((r as any).role);
+    rolesByUser.set((r as any).user_id, list);
+  }
+
+  // Admins can view all workspace user profiles; roles are scoped to this organization.
+  const allProfiles = (profiles ?? []) as any[];
+  return allProfiles.map((p) => {
+    const rs = rolesByUser.get(p.id) ?? [];
+    const role = roleLabel(rs);
+    return {
+      id: p.id,
+      name: p.full_name ?? p.email ?? "User",
+      email: p.email ?? "",
+      phone: p.phone ?? "",
+      role,
+      status: p.is_active === false ? "suspended" : "active",
+      lastActive: p.updated_at ?? p.created_at ?? "",
+      permissions: permissionsForRole(role),
+    } as SystemUser;
+  });
 }

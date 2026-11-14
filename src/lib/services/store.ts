@@ -38,7 +38,8 @@ export async function refreshDatabase() {
     try {
       database = await fetchDatabaseFromSupabase();
       loaded = true;
-    } catch {
+    } catch (error) {
+      console.error("[store] Failed to load database from Supabase", error);
       // keep previous/empty database on error; UI can show empty states
     } finally {
       loading = null;

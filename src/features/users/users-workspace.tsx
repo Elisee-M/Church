@@ -21,6 +21,7 @@ import type { SystemUser, SystemUserRole } from "@/types";
 import { formatDateTime, initials } from "@/lib/utils";
 import { deleteUser, updateUser } from "@/lib/services";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
+import { listManagedUsersAction } from "@/lib/actions/admin-users";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -89,16 +90,40 @@ export function UsersWorkspace() {
   const [editingUser, setEditingUser] = React.useState<SystemUser | null>(null);
   const [deletingUser, setDeletingUser] = React.useState<SystemUser | null>(null);
   const [deleting, setDeleting] = React.useState(false);
+  const [users, setUsers] = React.useState<SystemUser[]>([]);
+  const [usersLoading, setUsersLoading] = React.useState(true);
+  const [usersError, setUsersError] = React.useState<string | null>(null);
 
-  const selected = db.users.find((user) => user.id === selectedId);
-  const filtered = db.users.filter(
+  const refreshUsers = React.useCallback(async () => {
+    try {
+      setUsersError(null);
+      const list = await listManagedUsersAction();
+      setUsers(list);
+    } catch (error) {
+      setUsersError(error instanceof Error ? error.message : "Could not load users.");
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    void refreshUsers();
+  }, [refreshUsers]);
+
+  // refresh when global data changes (after mutations)
+  React.useEffect(() => {
+    void refreshUsers();
+  }, [db, refreshUsers]);
+
+  const selected = users.find((user) => user.id === selectedId);
+  const filtered = users.filter(
     (user) =>
       (roleFilter === "all" || user.role === roleFilter) &&
       (statusFilter === "all" || user.status === statusFilter),
   );
-  const active = db.users.filter((user) => user.status === "active");
-  const invited = db.users.filter((user) => user.status === "invited");
-  const staff = db.users.filter((user) => user.role !== "Tenant");
+  const active = users.filter((user) => user.status === "active");
+  const invited = users.filter((user) => user.status === "invited");
+  const staff = users.filter((user) => user.role !== "Tenant");
 
   const toggleStatus = async (user: SystemUser) => {
     const next = user.status === "active" ? "suspended" : "active";
@@ -120,6 +145,7 @@ export function UsersWorkspace() {
       toast.success("User deleted", { description: `${deletingUser.name} has been removed.` });
       if (selectedId === deletingUser.id) setSelectedId(null);
       setDeletingUser(null);
+      await refreshUsers();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not delete user.");
     } finally {
@@ -243,11 +269,17 @@ export function UsersWorkspace() {
         }
       />
 
+      {usersError ? (
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive">
+          Could not load users: {usersError}
+        </div>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Total accounts"
-          value={db.users.length}
-          hint={`${staff.length} internal · ${db.users.length - staff.length} tenant`}
+          value={users.length}
+          hint={`${staff.length} internal · ${users.length - staff.length} tenant`}
           icon={Users}
           tone="navy"
         />
@@ -267,7 +299,7 @@ export function UsersWorkspace() {
         />
         <StatCard
           label="Suspended accounts"
-          value={db.users.filter((user) => user.status === "suspended").length}
+          value={users.filter((user) => user.status === "suspended").length}
           hint="Access currently blocked"
           icon={UserRoundX}
           tone="danger"
@@ -343,8 +375,13 @@ export function UsersWorkspace() {
         <span className="flex items-center gap-1.5">
           <Shield className="size-3.5" /> User access and roles are managed by administrators.
         </span>
-        <span>{db.users.length} accounts in this workspace</span>
+        <span>{users.length} accounts in this workspace</span>
       </div>
+      {usersError ? (
+        <div className="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-[11px] text-destructive">
+          Could not load users: {usersError}
+        </div>
+      ) : null}
 
       {inviteOpen && <InviteUserDialog onClose={() => setInviteOpen(false)} />}
       {editingUser && <EditUserDialog user={editingUser} onClose={() => setEditingUser(null)} />}
