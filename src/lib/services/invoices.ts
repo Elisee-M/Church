@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { refreshDatabase } from "./store";
 
-export async function generateMonthlyInvoices(period: string) {
+export async function generateMonthlyInvoices(period: string, tenantId?: string) {
   const supabase = createClient();
   const { data: org } = await supabase.from("organizations").select("id").limit(1).maybeSingle();
   if (!org?.id) throw new Error("No organization found.");
@@ -16,6 +16,7 @@ export async function generateMonthlyInvoices(period: string) {
     p_period_end: endDate,
     p_issue_date: new Date().toISOString().slice(0, 10),
     p_due_day: null,
+    p_tenant_id: tenantId ?? null,
   });
   if (error) throw new Error(error.message);
   await refreshDatabase();

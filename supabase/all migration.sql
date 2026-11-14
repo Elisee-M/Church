@@ -1470,7 +1470,8 @@ create or replace function public.generate_monthly_invoices(
   p_period_start date,
   p_period_end date,
   p_issue_date date default current_date,
-  p_due_day integer default null
+  p_due_day integer default null,
+  p_tenant_id uuid default null
 ) returns integer
 language plpgsql
 security definer
@@ -1497,6 +1498,7 @@ begin
       and ra.status in ('active','expiring')
       and ra.start_date <= p_period_end
       and ra.end_date >= p_period_start
+      and (p_tenant_id is null or ra.tenant_id = p_tenant_id)
   loop
     -- skip if invoice already exists for this agreement and period
     if exists (
@@ -1527,7 +1529,7 @@ begin
     end if;
 
     -- generate invoice number per org/period sequence
-    select count(*) + 1 into v_seq
+    select coalesce(max(cast(right(invoice_number, 4) as integer)), 0) + 1 into v_seq
     from public.invoices
     where organization_id = p_organization_id
       and billing_period_start = p_period_start

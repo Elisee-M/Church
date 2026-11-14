@@ -19,14 +19,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function GenerateInvoicesDialog({ onClose }: { onClose: () => void }) {
   const db = useDatabase();
   const [period, setPeriod] = React.useState(currentMonthKey());
+  const [tenantId, setTenantId] = React.useState("all");
   const [submitting, setSubmitting] = React.useState(false);
 
   const activeAgreements = db.agreements.filter(
-    (agreement) => agreement.status === "active" || agreement.status === "expiring",
+    (agreement) =>
+      (agreement.status === "active" || agreement.status === "expiring") &&
+      (tenantId === "all" || agreement.tenantId === tenantId),
   );
   const alreadyInvoiced = activeAgreements.filter((agreement) =>
     db.invoices.some(
@@ -52,7 +62,7 @@ export function GenerateInvoicesDialog({ onClose }: { onClose: () => void }) {
     }
     setSubmitting(true);
     try {
-      const generated = await generateMonthlyInvoices(period);
+      const generated = await generateMonthlyInvoices(period, tenantId === "all" ? undefined : tenantId);
       if (generated === 0) {
         toast.message("No new invoices generated", {
           description: `Every active agreement already has an invoice for ${monthLabel(period)}.`,
@@ -88,6 +98,30 @@ export function GenerateInvoicesDialog({ onClose }: { onClose: () => void }) {
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="invoice-tenant">Generate for</Label>
+            <Select value={tenantId} onValueChange={setTenantId}>
+              <SelectTrigger id="invoice-tenant">
+                <SelectValue placeholder="All tenants" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tenants (bulk)</SelectItem>
+                {db.tenants
+                  .slice()
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((tenant) => (
+                    <SelectItem key={tenant.id} value={tenant.id}>
+                      {tenant.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <p className="text-[10.5px] text-muted-foreground">
+              Choose a single tenant to generate only their invoice, or keep bulk mode for every
+              active agreement.
+            </p>
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="invoice-period">Billing month</Label>
             <Input
