@@ -233,6 +233,7 @@ export async function fetchDatabaseFromSupabase(): Promise<Database> {
     buildingId: t.building_id ?? undefined,
     floorId: t.floor_id ?? undefined,
     roomNumber: t.room_number ?? undefined,
+    monthlyRent: t.monthly_rent != null ? Number(t.monthly_rent) : undefined,
     since: (t.created_at ?? "").slice(0, 10),
     status: "active",
     notes: undefined,
