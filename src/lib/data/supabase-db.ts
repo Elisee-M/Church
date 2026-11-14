@@ -364,24 +364,33 @@ export async function fetchDatabaseFromSupabase(): Promise<Database> {
     list.push(r.role);
     rolesByUser.set(r.user_id, list);
   }
-  function roleLabel(rs: string[] = []): any {
+  function roleLabel(rs: string[] = [], managedRole?: string | null): any {
+    const allowed = ["Administrator", "Accountant", "Property Manager", "Tenant", "Viewer"];
+    if (managedRole && allowed.includes(managedRole)) return managedRole;
     if (rs.includes("admin")) return "Administrator";
     if (rs.includes("accountant")) return "Accountant";
     if (rs.includes("tenant")) return "Tenant";
     return "Viewer";
   }
+  function permissionsForRole(role: string): string[] {
+    if (role === "Administrator") return ["Manage users and roles", "Manage properties and agreements", "View and manage finances", "Access all reports and settings"];
+    if (role === "Accountant") return ["Record and verify payments", "Manage invoices and expenses", "View financial reports"];
+    if (role === "Tenant") return ["View own rentals and invoices", "View payment history and receipts"];
+    return ["View assigned information"];
+  }
   const users: SystemUser[] = profiles.map((p: any) => {
     const rs = rolesByUser.get(p.id) ?? [];
+    const role = roleLabel(rs, p.managed_role);
     return {
       id: p.id,
       name: p.full_name ?? p.email ?? "User",
       email: p.email ?? "",
       phone: p.phone ?? "",
-      role: roleLabel(rs),
+      role,
       status: p.is_active === false ? "suspended" : "active",
-      lastActive: p.updated_at ?? "",
+      lastActive: p.updated_at ?? p.created_at ?? "",
       tenantId: undefined,
-      permissions: [],
+      permissions: permissionsForRole(role),
     } as any;
   });
 

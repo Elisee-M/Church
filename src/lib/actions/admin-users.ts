@@ -54,15 +54,20 @@ async function ensureProfileAndRole(opts: {
     email: opts.input.email,
     phone: opts.input.phone ?? null,
     is_active: true,
+    managed_role: opts.input.role,
   });
   if (profileError) throw new Error(profileError.message);
 
+  // Replace org roles to keep access-control role in sync with selected managed role
+  await admin.from("user_roles").delete().eq("user_id", opts.userId).eq("organization_id", opts.orgId);
   const dbRole = mapRole(opts.input.role);
   if (dbRole) {
-    const { error: roleError } = await admin.from("user_roles").upsert(
-      { user_id: opts.userId, organization_id: opts.orgId, role: dbRole, created_by: opts.actorId },
-      { onConflict: "user_id,organization_id,role" },
-    );
+    const { error: roleError } = await admin.from("user_roles").insert({
+      user_id: opts.userId,
+      organization_id: opts.orgId,
+      role: dbRole,
+      created_by: opts.actorId,
+    });
     if (roleError) throw new Error(roleError.message);
   }
 }
@@ -124,16 +129,18 @@ export async function updateManagedUserAction(input: UpdateManagedUserInput) {
   if (input.email !== undefined) profilePatch.email = input.email;
   if (input.phone !== undefined) profilePatch.phone = input.phone ?? null;
   if (input.status !== undefined) profilePatch.is_active = input.status === "active";
+  if (input.role !== undefined) profilePatch.managed_role = input.role;
 
   const authPatch: Record<string, any> = {};
   if (input.email !== undefined) {
     authPatch.email = input.email;
     authPatch.email_confirm = true;
   }
-  if (input.name !== undefined || input.phone !== undefined) {
+  if (input.name !== undefined || input.phone !== undefined || input.role !== undefined) {
     authPatch.user_metadata = {
       ...(input.name !== undefined ? { full_name: input.name } : {}),
       ...(input.phone !== undefined ? { phone: input.phone ?? null } : {}),
+      ...(input.role !== undefined ? { managed_role: input.role } : {}),
     };
   }
 
@@ -148,7 +155,7 @@ export async function updateManagedUserAction(input: UpdateManagedUserInput) {
   }
 
   if (input.role !== undefined) {
-    // Replace roles for this org with selected mapped role (if mapped)
+    // Replace roles for this org to keep access-control role in sync with selected managed role
     const dbRole = mapRole(input.role);
     await admin.from("user_roles").delete().eq("user_id", input.userId).eq("organization_id", orgId);
     if (dbRole) {
@@ -160,7 +167,6 @@ export async function updateManagedUserAction(input: UpdateManagedUserInput) {
       });
       if (error) throw new Error(error.message);
     }
-    // If role not mapped (Property Manager/Viewer), we clear app_role rows; UI-level role still shown from selection context not stored.
   }
 
   return { updated: true };
@@ -177,7 +183,9 @@ export async function deleteUserAction(userId: string) {
   return { deleted: true };
 }
 
-function roleLabel(rs: string[] = []): SystemUserRole {
+function roleLabel(rs: string[] = [], managedRole?: string | null): SystemUserRole {
+  const allowed: SystemUserRole[] = ["Administrator", "Accountant", "Property Manager", "Tenant", "Viewer"];
+  if (managedRole && allowed.includes(managedRole as SystemUserRole)) return managedRole as SystemUserRole;
   if (rs.includes("admin")) return "Administrator";
   if (rs.includes("accountant")) return "Accountant";
   if (rs.includes("tenant")) return "Tenant";
@@ -213,7 +221,7 @@ export async function listManagedUsersAction(): Promise<SystemUser[]> {
   const allProfiles = (profiles ?? []) as any[];
   return allProfiles.map((p) => {
     const rs = rolesByUser.get(p.id) ?? [];
-    const role = roleLabel(rs);
+    const role = roleLabel(rs, p.managed_role);
     return {
       id: p.id,
       name: p.full_name ?? p.email ?? "User",
