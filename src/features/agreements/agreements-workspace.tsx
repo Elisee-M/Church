@@ -139,7 +139,7 @@ export function AgreementsWorkspace() {
       cell: (agreement) => (
         <div>
           <p className="text-[11px]">{formatDate(agreement.startDate)} → {formatDate(agreement.endDate)}</p>
-          <p className="text-[10px] text-muted-foreground">Due day {agreement.dueDay}</p>
+
         </div>
       ),
     },
@@ -358,10 +358,6 @@ export function AgreementsWorkspace() {
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-[11px]">
-                <div className="rounded-lg border border-border px-3 py-2.5">
-                  <p className="text-[9.5px] uppercase tracking-wide text-muted-foreground">Rent due day</p>
-                  <p className="mt-0.5 font-medium">Day {selected.dueDay} of each month</p>
-                </div>
                 <div className="rounded-lg border border-border px-3 py-2.5">
                   <p className="text-[9.5px] uppercase tracking-wide text-muted-foreground">Late penalty</p>
                   <p className="mt-0.5 font-medium">

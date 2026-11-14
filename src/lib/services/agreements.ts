@@ -9,7 +9,6 @@ export type AgreementInput = {
   lineItems: AgreementLine[];
   startDate: string;
   endDate: string;
-  dueDay: number;
   deposit: number;
   notes?: string;
   penaltyEnabled?: boolean;
@@ -49,8 +48,6 @@ export async function createAgreement(input: AgreementInput) {
       agreement_number: nextAgreementNumber(input.startDate),
       start_date: input.startDate,
       end_date: input.endDate,
-      billing_day: input.dueDay,
-      payment_due_day: input.dueDay,
       status: status === "terminated" ? "terminated" : status,
       terms: input.notes || null,
     })
@@ -83,10 +80,6 @@ export async function updateAgreement(id: string, patch: Partial<AgreementInput>
   if (patch.endDate) {
     update.end_date = patch.endDate;
     update.status = statusForEndDate(patch.endDate);
-  }
-  if (patch.dueDay) {
-    update.billing_day = patch.dueDay;
-    update.payment_due_day = patch.dueDay;
   }
   if (patch.notes !== undefined) update.terms = patch.notes;
   if (Object.keys(update).length) {

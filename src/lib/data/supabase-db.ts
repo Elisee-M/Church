@@ -50,7 +50,6 @@ function emptySettings(): AppSettings {
     },
     invoices: {
       prefix: "INV",
-      dueDay: 5,
       gracePeriodDays: 5,
       autoGenerateMonthly: false,
       footerNote: "",
@@ -153,7 +152,6 @@ export async function fetchDatabaseFromSupabase(): Promise<Database> {
   const s = settingsRes.data as any;
   if (s) {
     settingsBase.invoices.prefix = s.invoice_prefix ?? settingsBase.invoices.prefix;
-    settingsBase.invoices.dueDay = s.default_due_day ?? settingsBase.invoices.dueDay;
     settingsBase.invoices.gracePeriodDays = s.grace_period_days ?? settingsBase.invoices.gracePeriodDays;
     settingsBase.invoices.autoGenerateMonthly = !!s.auto_generate_monthly;
     settingsBase.penalties.enabled = !!s.penalty_enabled;
@@ -244,7 +242,6 @@ export async function fetchDatabaseFromSupabase(): Promise<Database> {
     lineItems: spacesByAgreement.get(a.id) ?? [],
     startDate: a.start_date,
     endDate: a.end_date,
-    dueDay: a.payment_due_day ?? a.billing_day ?? 5,
     monthlyCycle: "monthly",
     status: (a.status === "cancelled" ? "terminated" : a.status) as any,
     deposit: 0,

@@ -81,7 +81,6 @@ export type Agreement = {
   lineItems: AgreementLine[];
   startDate: string;
   endDate: string;
-  dueDay: number;
   monthlyCycle: "monthly";
   status: AgreementStatus;
   deposit: number;
@@ -258,7 +257,6 @@ export type EbmSettings = {
 
 export type InvoiceSettings = {
   prefix: string;
-  dueDay: number;
   gracePeriodDays: number;
   autoGenerateMonthly: boolean;
   footerNote: string;

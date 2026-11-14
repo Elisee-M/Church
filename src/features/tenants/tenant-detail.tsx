@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
 import Link from "next/link";
@@ -97,7 +97,7 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
             <Badge variant="neutral">{TENANT_TYPE_LABELS[tenant.type]}</Badge>
           </div>
         }
-        description={`Tenant since ${formatDate(tenant.since)} · ${tenant.address}`}
+        description={`Tenant since ${formatDate(tenant.since)} Â· ${tenant.address}`}
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => setConfirmStatus(true)}>
@@ -163,11 +163,11 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">National ID</p>
-                  <p className="mt-0.5 font-mono text-[11px]">{tenant.nationalId ?? "—"}</p>
+                  <p className="mt-0.5 font-mono text-[11px]">{tenant.nationalId ?? "â€”"}</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground">TIN</p>
-                  <p className="mt-0.5 font-mono text-[11px]">{tenant.tin ?? "—"}</p>
+                  <p className="mt-0.5 font-mono text-[11px]">{tenant.tin ?? "â€”"}</p>
                 </div>
               </div>
               {tenant.contactName && (
@@ -203,7 +203,7 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                   <div className="min-w-0">
                     <p className="truncate text-[12px] font-medium">{space.name}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {space.code} · {SPACE_CATEGORY_LABELS[space.category]} · {space.sizeSqm} m²
+                      {space.code} Â· {SPACE_CATEGORY_LABELS[space.category]} Â· {space.sizeSqm} mÂ²
                     </p>
                   </div>
                   <p className="shrink-0 text-[11.5px] font-semibold">{formatCurrency(space.monthlyRent, true)}</p>
@@ -267,7 +267,7 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                   <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-medium">{agreement.reference}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {formatDate(agreement.startDate)} → {formatDate(agreement.endDate)} · Due day {agreement.dueDay}
+                      {formatDate(agreement.startDate)} â†’ {formatDate(agreement.endDate)} Â·
                     </p>
                   </div>
                   <div className="text-right">
@@ -309,7 +309,7 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                   <div className="min-w-0 flex-1">
                     <p className="text-[12px] font-medium">{invoice.number}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      {formatDate(invoice.issueDate, "month")} · due {formatDate(invoice.dueDate)}
+                      {formatDate(invoice.issueDate, "month")} Â· due {formatDate(invoice.dueDate)}
                     </p>
                   </div>
                   <div className="text-right">
@@ -336,7 +336,7 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                     <div className="min-w-0">
                       <p className="text-[11.5px] font-medium">{PAYMENT_METHOD_SHORT[payment.method]}</p>
                       <p className="truncate text-[10px] text-muted-foreground">
-                        {formatDate(payment.date)} · {payment.reference}
+                        {formatDate(payment.date)} Â· {payment.reference}
                       </p>
                     </div>
                     <div className="text-right">
@@ -361,7 +361,7 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[11px] font-medium">{document.name}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {formatDate(document.date)} · {document.fileSize}
+                        {formatDate(document.date)} Â· {document.fileSize}
                       </p>
                     </div>
                     <Button variant="ghost" size="icon-xs" aria-label="Download document">

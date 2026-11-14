@@ -59,7 +59,6 @@ export function AgreementFormDialog({
           : []),
       startDate: agreement?.startDate ?? today.toISOString().slice(0, 10),
       endDate: agreement?.endDate ?? yearFromNow.toISOString().slice(0, 10),
-      dueDay: agreement?.dueDay ?? db.settings.invoices.dueDay,
       deposit: agreement?.deposit ?? 0,
       penaltyEnabled: agreement?.penaltyEnabled ?? db.settings.penalties.enabled,
       penaltyRate: agreement?.penaltyRate ?? db.settings.penalties.ratePercent,
@@ -70,7 +69,6 @@ export function AgreementFormDialog({
   const lineItems = useWatch({ control: form.control, name: "lineItems" }) ?? [];
   const tenantId = useWatch({ control: form.control, name: "tenantId" });
   const penaltyEnabled = useWatch({ control: form.control, name: "penaltyEnabled" });
-  const dueDay = useWatch({ control: form.control, name: "dueDay" });
   const startDate = useWatch({ control: form.control, name: "startDate" });
   const endDate = useWatch({ control: form.control, name: "endDate" });
   const totalRent = lineItems.reduce((sum, line) => sum + (Number(line.monthlyRent) || 0), 0);
@@ -104,7 +102,6 @@ export function AgreementFormDialog({
       lineItems: values.lineItems,
       startDate: values.startDate,
       endDate: values.endDate,
-      dueDay: values.dueDay,
       deposit: values.deposit,
       penaltyEnabled: values.penaltyEnabled,
       penaltyRate: values.penaltyRate,
@@ -247,29 +244,12 @@ export function AgreementFormDialog({
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Start date" htmlFor="agreement-start" error={form.formState.errors.startDate?.message}>
               <Input id="agreement-start" type="date" {...form.register("startDate")} />
             </Field>
             <Field label="End date" htmlFor="agreement-end" error={form.formState.errors.endDate?.message}>
               <Input id="agreement-end" type="date" {...form.register("endDate")} />
-            </Field>
-            <Field label="Rent due day" error={form.formState.errors.dueDay?.message}>
-              <Select
-                value={String(dueDay)}
-                onValueChange={(value) => form.setValue("dueDay", Number(value), { shouldValidate: true })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 28 }).map((_, index) => (
-                    <SelectItem key={index + 1} value={String(index + 1)}>
-                      Day {index + 1}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </Field>
           </div>
 
@@ -321,7 +301,7 @@ export function AgreementFormDialog({
           </Field>
 
           <div className="rounded-lg bg-accent/70 px-3 py-2.5 text-[10.5px] leading-relaxed text-muted-foreground dark:bg-white/[0.04]">
-            Due day {dueDay} · Starts {formatDate(startDate)} · Ends {formatDate(endDate)}. A monthly invoice
+            Rent period · Starts {formatDate(startDate)} · Ends {formatDate(endDate)}. A monthly invoice
             will be generated for each active agreement.
           </div>
 

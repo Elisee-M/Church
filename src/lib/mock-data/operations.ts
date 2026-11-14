@@ -43,7 +43,6 @@ export const settings: AppSettings = {
   },
   invoices: {
     prefix: "INV",
-    dueDay: 5,
     gracePeriodDays: 5,
     autoGenerateMonthly: false,
     footerNote: "",

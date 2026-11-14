@@ -252,18 +252,7 @@ export function SettingsWorkspace() {
                     }
                   />
                 </Field>
-                <Field label="Due day" htmlFor="invoice-due-day" hint="Invoices are due by 23:59.">
-                  <Input
-                    id="invoice-due-day"
-                    type="number"
-                    min={1}
-                    max={28}
-                    value={invoices.dueDay}
-                    onChange={(event) =>
-                      setInvoices({ ...invoices, dueDay: Number(event.target.value) })
-                    }
-                  />
-                </Field>
+
                 <Field label="Grace period (days)" htmlFor="invoice-grace">
                   <Input
                     id="invoice-grace"

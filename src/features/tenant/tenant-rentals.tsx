@@ -106,10 +106,6 @@ export function TenantRentals() {
                 </p>
               </div>
               <div className="hidden h-10 w-px bg-border sm:block" />
-              <div>
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Due day</p>
-                <p className="mt-0.5 text-[15px] font-medium">Day {activeAgreement.dueDay}</p>
-              </div>
             </div>
           </div>
 
@@ -274,7 +270,7 @@ export function TenantRentals() {
               <div className="flex gap-2">
                 <CalendarClock className="mt-0.5 size-3.5 shrink-0 text-primary dark:text-foreground" />
                 <p>
-                  Rent is due by day {activeAgreement?.dueDay ?? 5} of each month. You can pay in
+                  Rent is invoiced monthly. You can pay in
                   full or in parts.
                 </p>
               </div>

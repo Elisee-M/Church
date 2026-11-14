@@ -331,10 +331,7 @@ export function InvoiceDetail({
                   <dt className="text-muted-foreground">Due</dt>
                   <dd>{formatDate(invoice.dueDate, "long")}</dd>
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">Rent due day</dt>
-                  <dd>Day {agreement?.dueDay ?? "—"}</dd>
-                </div>
+
                 <Separator />
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-muted-foreground">Deposit on file</dt>

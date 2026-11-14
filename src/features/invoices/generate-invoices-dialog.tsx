@@ -129,7 +129,7 @@ export function GenerateInvoicesDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="rounded-lg bg-accent/70 px-3 py-2.5 text-[10.5px] leading-relaxed text-muted-foreground dark:bg-white/[0.04]">
-            Invoices are due on each agreement&apos;s configured due day. Generating an invoice does
+            Invoices are generated for each active agreement. Generating an invoice does
             not create an EBM fiscal document — the accountant records that reference separately.
           </div>
         </div>

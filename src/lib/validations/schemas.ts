@@ -57,7 +57,6 @@ export const agreementSchema = z
     lineItems: z.array(agreementLineSchema).min(1, "Select at least one rental space."),
     startDate: z.string().min(1, "Select a start date."),
     endDate: z.string().min(1, "Select an end date."),
-    dueDay: z.number().min(1, "Due day must be between 1 and 28.").max(28, "Due day must be between 1 and 28."),
     deposit: z.number().min(0, "Deposit cannot be negative."),
     penaltyEnabled: z.boolean(),
     penaltyRate: z.number().min(0, "Rate cannot be negative.").max(100, "Rate cannot exceed 100%."),

@@ -26,7 +26,7 @@ export async function updateSettings(patch: Partial<AppSettings>) {
   // Upsert organization settings
   const settingsPatch: Record<string, unknown> = { organization_id: org.id };
   if (patch.invoices?.prefix !== undefined) settingsPatch.invoice_prefix = patch.invoices.prefix;
-  if (patch.invoices?.dueDay !== undefined) settingsPatch.default_due_day = patch.invoices.dueDay;
+
   if (patch.invoices?.gracePeriodDays !== undefined) settingsPatch.grace_period_days = patch.invoices.gracePeriodDays;
   if (patch.invoices?.autoGenerateMonthly !== undefined) settingsPatch.auto_generate_monthly = patch.invoices.autoGenerateMonthly;
   if (patch.penalties?.enabled !== undefined) settingsPatch.penalty_enabled = patch.penalties.enabled;
