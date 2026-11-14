@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Loader2 } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -46,6 +47,9 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
       buildingId: tenant?.buildingId ?? "",
       floorId: tenant?.floorId ?? "",
       roomNumber: tenant?.roomNumber ?? "",
+      roomNumbers:
+        tenant?.roomNumbers ??
+        (tenant?.roomNumber ? [tenant.roomNumber] : Array.from({ length: tenant?.roomsNeeded ?? 1 }, () => "")),
       monthlyRent: tenant?.monthlyRent ?? 0,
       roomsNeeded: tenant?.roomsNeeded ?? 1,
       createLoginAccount: false,
@@ -54,6 +58,13 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
     },
   });
   const type = useWatch({ control: form.control, name: "type" });
+  const roomsNeeded = form.watch("roomsNeeded");
+  React.useEffect(() => {
+    const current = form.getValues("roomNumbers") ?? [];
+    const count = Math.max(roomsNeeded ?? 1, 1);
+    const next = Array.from({ length: count }, (_, index) => current[index] ?? "");
+    form.setValue("roomNumbers", next, { shouldDirty: false });
+  }, [roomsNeeded, form]);
   const createLoginAccount = useWatch({ control: form.control, name: "createLoginAccount" });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -214,9 +225,21 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Room no." htmlFor="tenant-room" optional hint="e.g. 02-A">
-              <Input id="tenant-room" placeholder="02-A" {...form.register("roomNumber")} />
-            </Field>
+            {Array.from({ length: Math.max(form.watch("roomsNeeded") ?? 1, 1) }).map((_, index) => (
+              <Field
+                key={index}
+                label={`Room no. ${index + 1}`}
+                htmlFor={`tenant-room-${index}`}
+                optional
+                hint="e.g. 02-A"
+              >
+                <Input
+                  id={`tenant-room-${index}`}
+                  placeholder="02-A"
+                  {...form.register(`roomNumbers.${index}`)}
+                />
+              </Field>
+            ))}
           </div>
 
           <Field

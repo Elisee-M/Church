@@ -62,6 +62,7 @@ export type Tenant = {
   buildingId?: string;
   floorId?: string;
   roomNumber?: string;
+  roomNumbers?: string[];
   monthlyRent?: number;
   roomsNeeded?: number;
   linkedUserId?: string;

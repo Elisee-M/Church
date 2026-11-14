@@ -18,6 +18,7 @@ export async function createTenant(input: {
   buildingId?: string;
   floorId?: string;
   roomNumber?: string;
+  roomNumbers?: string[];
   monthlyRent?: number;
   roomsNeeded?: number;
   notes?: string;
@@ -37,7 +38,7 @@ export async function createTenant(input: {
     address: input.address || null,
     building_id: input.buildingId || null,
     floor_id: input.floorId || null,
-    room_number: input.roomNumber || null,
+    room_number: (input.roomNumbers && input.roomNumbers.length ? input.roomNumbers : input.roomNumber ? [input.roomNumber] : []).filter(Boolean).join(", ") || null,
     monthly_rent: input.monthlyRent ?? null,
     rooms_needed: input.roomsNeeded ?? null,
     emergency_contact_phone: input.altPhone || null,
@@ -62,6 +63,7 @@ export async function updateTenant(
     buildingId?: string;
     floorId?: string;
     roomNumber?: string;
+    roomNumbers?: string[];
     monthlyRent?: number;
     roomsNeeded?: number;
     notes?: string;
@@ -78,7 +80,14 @@ export async function updateTenant(
   if (input.address !== undefined) patch.address = input.address;
   if (input.buildingId !== undefined) patch.building_id = input.buildingId || null;
   if (input.floorId !== undefined) patch.floor_id = input.floorId || null;
-  if (input.roomNumber !== undefined) patch.room_number = input.roomNumber || null;
+  if (input.roomNumbers !== undefined || input.roomNumber !== undefined) {
+    const numbers = input.roomNumbers && input.roomNumbers.length
+      ? input.roomNumbers
+      : input.roomNumber
+        ? [input.roomNumber]
+        : [];
+    patch.room_number = numbers.filter(Boolean).join(", ") || null;
+  }
   if (input.altPhone !== undefined) patch.emergency_contact_phone = input.altPhone;
   if (input.contactName !== undefined) patch.company_name = input.contactName;
   if (input.monthlyRent !== undefined) patch.monthly_rent = input.monthlyRent ?? null;

@@ -18,6 +18,7 @@ export type CreateTenantWithAccountInput = {
   buildingId?: string;
   floorId?: string;
   roomNumber?: string;
+  roomNumbers?: string[];
   monthlyRent?: number;
   notes?: string;
   loginPassword: string;
@@ -87,7 +88,7 @@ export async function createTenantWithAccountAction(input: CreateTenantWithAccou
       address: input.address || null,
       building_id: input.buildingId || null,
       floor_id: input.floorId || null,
-      room_number: input.roomNumber || null,
+      room_number: (input.roomNumbers && input.roomNumbers.length ? input.roomNumbers : input.roomNumber ? [input.roomNumber] : []).filter(Boolean).join(", ") || null,
       monthly_rent: input.monthlyRent ?? null,
       emergency_contact_phone: input.altPhone || null,
       linked_user_id: userId,

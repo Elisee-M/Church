@@ -160,7 +160,9 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                     <p className="text-[12px]">
                       {db.buildings.find((b) => b.id === tenant.buildingId)?.name ?? "Building"}
                       {tenant.floorId ? ` �� ${db.floors.find((f) => f.id === tenant.floorId)?.name ?? "Floor"}` : ""}
-                      {tenant.roomNumber ? ` �� Room ${tenant.roomNumber}` : ""}
+                      {(tenant.roomNumbers?.length ? tenant.roomNumbers : tenant.roomNumber ? [tenant.roomNumber] : []).length
+                        ? ` �� Room ${(tenant.roomNumbers?.length ? tenant.roomNumbers : tenant.roomNumber ? [tenant.roomNumber] : []).join(", ")}`
+                        : ""}
                     </p>
                   </div>
                 </div>

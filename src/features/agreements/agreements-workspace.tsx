@@ -344,7 +344,8 @@ export function AgreementsWorkspace() {
                           const tenant = db.tenants.find((item) => item.id === selected.tenantId);
                           const building = db.buildings.find((item) => item.id === tenant?.buildingId);
                           const floor = db.floors.find((item) => item.id === tenant?.floorId);
-                          return [building?.name, floor?.name, tenant?.roomNumber ? "Room " + tenant.roomNumber : ""]
+                          const rooms = tenant?.roomNumbers?.length ? tenant.roomNumbers.join(", ") : tenant?.roomNumber;
+                          return [building?.name, floor?.name, rooms ? "Room " + rooms : ""]
                             .filter(Boolean)
                             .join(" - ");
                         })()}
