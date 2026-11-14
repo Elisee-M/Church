@@ -191,9 +191,6 @@ export function PropertiesWorkspace() {
             <Button variant="outline" size="sm" onClick={() => setBuildingDialog({})}>
               <Building2 className="size-3.5" /> Add building
             </Button>
-            <Button size="sm" onClick={() => setSpaceDialog({})}>
-              <Plus className="size-3.5" /> Add space
-            </Button>
           </>
         }
       />
@@ -254,14 +251,6 @@ export function PropertiesWorkspace() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setBuildingFilter(building.id);
-                        setSpaceDialog({ buildingId: building.id });
-                      }}
-                    >
-                      <Plus /> Add space here
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setBuildingDialog({ building })}>
                       <Pencil /> Edit building
                     </DropdownMenuItem>
