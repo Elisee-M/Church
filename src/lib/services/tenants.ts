@@ -127,36 +127,7 @@ export async function setTenantStatus(id: string, status: "active" | "inactive")
 
 export async function deleteTenant(id: string) {
   const supabase = createClient();
-
-  await supabase.from("ebm_records").delete().eq("tenant_id", id);
-
-  const { data: payments } = await supabase.from("payments").select("id").eq("tenant_id", id);
-  const paymentIds = (payments ?? []).map((payment: { id: string }) => payment.id);
-  if (paymentIds.length) {
-    await supabase.from("receipts").delete().in("payment_id", paymentIds);
-  }
-  await supabase.from("payments").delete().eq("tenant_id", id);
-
-  const { data: invoices } = await supabase.from("invoices").select("id").eq("tenant_id", id);
-  const invoiceIds = (invoices ?? []).map((invoice: { id: string }) => invoice.id);
-  if (invoiceIds.length) {
-    await supabase.from("invoice_items").delete().in("invoice_id", invoiceIds);
-  }
-  await supabase.from("invoices").delete().eq("tenant_id", id);
-
-  const { data: agreements } = await supabase.from("rental_agreements").select("id").eq("tenant_id", id);
-  const agreementIds = (agreements ?? []).map((agreement: { id: string }) => agreement.id);
-  if (agreementIds.length) {
-    const { data: lines } = await supabase.from("agreement_spaces").select("space_id").in("agreement_id", agreementIds);
-    const spaceIds = [...new Set((lines ?? []).map((line: { space_id: string }) => line.space_id).filter(Boolean))];
-    if (spaceIds.length) {
-      await supabase.from("spaces").update({ occupancy_status: "vacant" }).in("id", spaceIds);
-    }
-    await supabase.from("agreement_spaces").delete().in("agreement_id", agreementIds);
-  }
-  await supabase.from("rental_agreements").delete().eq("tenant_id", id);
-
-  const { error } = await supabase.from("tenants").delete().eq("id", id);
+  const { error } = await supabase.rpc("delete_tenant_cascade", { p_tenant_id: id });
   if (error) throw new Error(error.message);
   await refreshDatabase();
 }
