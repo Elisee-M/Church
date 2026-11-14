@@ -2,10 +2,10 @@
 
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, MailPlus } from "lucide-react";
+import { Loader2, MailPlus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import type { SystemUserRole } from "@/types";
-import { inviteUser } from "@/lib/services";
+import { createUser, inviteUser } from "@/lib/services";
 import { inviteUserSchema, type InviteUserFormValues } from "@/lib/validations/schemas";
 import { Field } from "@/components/shared/form-field";
 import {
@@ -30,6 +30,7 @@ const ROLES: SystemUserRole[] = [
   "Administrator",
   "Accountant",
   "Property Manager",
+  "Tenant",
   "Viewer",
 ];
 
@@ -37,21 +38,48 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
   const form = useForm<InviteUserFormValues>({
     resolver: zodResolver(inviteUserSchema),
     defaultValues: {
+      mode: "create",
       name: "",
       email: "",
       phone: "",
       role: "Property Manager",
+      password: "",
     },
   });
   const role = useWatch({ control: form.control, name: "role" });
+  const mode = useWatch({ control: form.control, name: "mode" });
 
   const onSubmit = form.handleSubmit(async (values) => {
     try {
-      await inviteUser(values);
-      toast.success("Invitation sent", { description: `${values.name} was invited as ${values.role}.` });
+      if (values.mode === "create") {
+        await createUser({
+          name: values.name,
+          email: values.email,
+          phone: values.phone,
+          role: values.role as SystemUserRole,
+          password: values.password || "",
+        });
+        toast.success("User created", {
+          description: `${values.name} can sign in immediately with the password you set.`,
+        });
+      } else {
+        await inviteUser({
+          name: values.name,
+          email: values.email,
+          phone: values.phone,
+          role: values.role as SystemUserRole,
+        });
+        toast.success("Invitation sent", { description: `${values.name} was invited as ${values.role}.` });
+      }
       onClose();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not invite user.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : values.mode === "create"
+            ? "Could not create user."
+            : "Could not invite user.",
+      );
     }
   });
 
@@ -61,18 +89,35 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
         <DialogHeader>
           <div className="flex items-center gap-2">
             <span className="flex size-9 items-center justify-center rounded-lg bg-accent text-primary dark:bg-white/[0.06] dark:text-foreground">
-              <MailPlus className="size-4" />
+              {mode === "create" ? <UserPlus className="size-4" /> : <MailPlus className="size-4" />}
             </span>
             <div>
-              <DialogTitle>Invite a team member</DialogTitle>
+              <DialogTitle>Add a team member</DialogTitle>
               <DialogDescription>
-                Grant access to Genzura with a role-based permission set.
+                Create a confirmed account immediately, or send an email invitation.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
+          <Field label="Account setup" error={form.formState.errors.mode?.message}>
+            <Select
+              value={mode}
+              onValueChange={(value) =>
+                form.setValue("mode", value as InviteUserFormValues["mode"], { shouldValidate: true })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="create">Create user (auto-confirm)</SelectItem>
+                <SelectItem value="invite">Invite by email</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+
           <Field label="Full name" htmlFor="invite-name" error={form.formState.errors.name?.message}>
             <Input id="invite-name" placeholder="e.g. Diane Mukamana" {...form.register("name")} />
           </Field>
@@ -89,6 +134,23 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
               <Input id="invite-phone" placeholder="078 000 0000" {...form.register("phone")} />
             </Field>
           </div>
+
+          {mode === "create" && (
+            <Field
+              label="Temporary password"
+              htmlFor="invite-password"
+              error={form.formState.errors.password?.message}
+              hint="Set an initial password (min. 8 characters). The user can sign in immediately."
+            >
+              <Input
+                id="invite-password"
+                type="password"
+                autoComplete="new-password"
+                placeholder="Enter initial password"
+                {...form.register("password")}
+              />
+            </Field>
+          )}
 
           <Field label="Role" error={form.formState.errors.role?.message}>
             <Select
@@ -123,8 +185,15 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
                   ? "Payments, verification, expenses, invoices and reports."
                   : role === "Property Manager"
                     ? "Buildings, spaces, agreements and tenant records."
-                    : "Read-only access to reports and dashboards."}
+                    : role === "Tenant"
+                      ? "Access to their own rentals, invoices, and payment history."
+                      : "Read-only access to reports and dashboards."}
             </p>
+            {mode === "create" ? (
+              <p className="mt-2 text-[10px] text-muted-foreground">
+                The account will be email-confirmed and ready to use right away.
+              </p>
+            ) : null}
           </div>
 
           <DialogFooter>
@@ -133,7 +202,7 @@ export function InviteUserDialog({ onClose }: { onClose: () => void }) {
             </Button>
             <Button type="submit" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
-              Send invitation
+              {mode === "create" ? "Create user" : "Send invitation"}
             </Button>
           </DialogFooter>
         </form>

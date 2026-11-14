@@ -3,7 +3,7 @@
 import type { SystemUserRole } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import { refreshDatabase } from "./store";
-import { inviteUserAction } from "@/lib/actions/admin-users";
+import { createUserAction, inviteUserAction } from "@/lib/actions/admin-users";
 
 export type UserInput = {
   name: string;
@@ -11,6 +11,8 @@ export type UserInput = {
   phone: string;
   role: SystemUserRole;
 };
+
+export type CreateUserInput = UserInput & { password: string };
 
 function dbRole(role: SystemUserRole): "admin" | "accountant" | "tenant" | null {
   if (role === "Administrator") return "admin";
@@ -21,6 +23,11 @@ function dbRole(role: SystemUserRole): "admin" | "accountant" | "tenant" | null 
 
 export async function inviteUser(input: UserInput) {
   await inviteUserAction(input);
+  await refreshDatabase();
+}
+
+export async function createUser(input: CreateUserInput) {
+  await createUserAction(input);
   await refreshDatabase();
 }
 

@@ -93,11 +93,31 @@ export const expenseSchema = z.object({
 
 export type ExpenseFormValues = z.infer<typeof expenseSchema>;
 
+export const managedUserRoleSchema = z.enum([
+  "Administrator",
+  "Accountant",
+  "Property Manager",
+  "Viewer",
+  "Tenant",
+]);
+
 export const inviteUserSchema = z.object({
+  mode: z.enum(["invite", "create"]),
   name: z.string().min(2, "Enter the user's name."),
   email: z.string().email("Enter a valid email address."),
   phone: z.string().regex(phoneRegex, "Enter a valid Rwandan phone number."),
-  role: z.enum(["Administrator", "Accountant", "Property Manager", "Viewer"]),
+  role: managedUserRoleSchema,
+  password: z.string().optional(),
+}).superRefine((val, ctx) => {
+  if (val.mode === "create") {
+    if (!val.password || val.password.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["password"],
+        message: "Enter a password with at least 8 characters.",
+      });
+    }
+  }
 });
 
 export type InviteUserFormValues = z.infer<typeof inviteUserSchema>;
