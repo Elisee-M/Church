@@ -1644,3 +1644,13 @@ from public.user_roles ur
 where ur.user_id = p.id
   and p.managed_role is null;
 
+
+
+-- ============================================================
+-- SOURCE: 20261114003000_tenants_monthly_rent.sql
+-- ============================================================
+
+-- Add default monthly rent amount for tenants (used for agreements/invoicing defaults)
+alter table public.tenants
+  add column if not exists monthly_rent numeric(14,2) check (monthly_rent is null or monthly_rent >= 0);
+

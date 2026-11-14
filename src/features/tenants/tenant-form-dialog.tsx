@@ -45,6 +45,7 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
       buildingId: tenant?.buildingId ?? "",
       floorId: tenant?.floorId ?? "",
       roomNumber: tenant?.roomNumber ?? "",
+      monthlyRent: tenant?.monthlyRent ?? 0,
       notes: tenant?.notes ?? "",
     },
   });
@@ -188,6 +189,21 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
               <Input id="tenant-room" placeholder="02-A" {...form.register("roomNumber")} />
             </Field>
           </div>
+
+          <Field
+            label="Monthly rent (RWF)"
+            htmlFor="tenant-rent"
+            error={form.formState.errors.monthlyRent?.message}
+            hint="Default monthly rent for this tenant's agreement/invoices"
+          >
+            <Input
+              id="tenant-rent"
+              type="number"
+              min={0}
+              step={1000}
+              {...form.register("monthlyRent", { valueAsNumber: true })}
+            />
+          </Field>
 
           <Field label="Notes" htmlFor="tenant-notes" optional>
             <Textarea

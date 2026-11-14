@@ -62,6 +62,7 @@ export type Tenant = {
   buildingId?: string;
   floorId?: string;
   roomNumber?: string;
+  monthlyRent?: number;
   since: string;
   status: "active" | "inactive";
   notes?: string;
