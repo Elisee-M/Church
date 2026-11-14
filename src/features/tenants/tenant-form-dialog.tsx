@@ -50,6 +50,12 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
       roomNumbers:
         tenant?.roomNumbers ??
         (tenant?.roomNumber ? [tenant.roomNumber] : Array.from({ length: tenant?.roomsNeeded ?? 1 }, () => "")),
+      rooms:
+        tenant?.rooms ??
+        Array.from({ length: tenant?.roomsNeeded ?? 1 }, (_, index) => ({
+          floorId: tenant?.floorId ?? "",
+          roomNumber: tenant?.roomNumbers?.[index] ?? tenant?.roomNumber ?? "",
+        })),
       monthlyRent: tenant?.monthlyRent ?? 0,
       roomsNeeded: tenant?.roomsNeeded ?? 1,
       createLoginAccount: false,
@@ -184,65 +190,71 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
             </Field>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Building" htmlFor="tenant-building" optional>
-              <Select
-                value={form.watch("buildingId") || ""}
-                onValueChange={(value) => {
-                  form.setValue("buildingId", value, { shouldValidate: true });
-                  form.setValue("floorId", "", { shouldValidate: true });
-                }}
-              >
-                <SelectTrigger id="tenant-building">
-                  <SelectValue placeholder="Select building" />
-                </SelectTrigger>
-                <SelectContent>
-                  {db.buildings.map((building) => (
-                    <SelectItem key={building.id} value={building.id}>
-                      {building.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Floor" htmlFor="tenant-floor" optional>
-              <Select
-                value={form.watch("floorId") || ""}
-                onValueChange={(value) => form.setValue("floorId", value, { shouldValidate: true })}
-                disabled={!form.watch("buildingId")}
-              >
-                <SelectTrigger id="tenant-floor">
-                  <SelectValue placeholder="Select floor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {db.floors
-                    .filter((floor) => floor.buildingId === form.watch("buildingId"))
-                    .map((floor) => (
-                      <SelectItem key={floor.id} value={floor.id}>
-                        {floor.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            {Array.from({ length: Math.max(form.watch("roomsNeeded") ?? 1, 1) }).map((_, index) => (
-              <Field
-                key={index}
-                label={`Room no. ${index + 1}`}
-                htmlFor={`tenant-room-${index}`}
-                optional
-                hint="e.g. 02-A"
-              >
-                <Input
-                  id={`tenant-room-${index}`}
-                  placeholder="02-A"
-                  {...form.register(`roomNumbers.${index}`)}
-                />
-              </Field>
-            ))}
-          </div>
+                     <div className="grid gap-4 sm:grid-cols-2">
+             <Field label="Building" htmlFor="tenant-building" optional>
+               <Select
+                 value={form.watch("buildingId") || ""}
+                 onValueChange={(value) => {
+                   form.setValue("buildingId", value, { shouldValidate: true });
+                 }}
+               >
+                 <SelectTrigger id="tenant-building">
+                   <SelectValue placeholder="Select building" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {db.buildings.map((building) => (
+                     <SelectItem key={building.id} value={building.id}>
+                       {building.name}
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </Field>
+             <Field label="Rooms needed" htmlFor="tenant-rooms-needed" optional>
+               <Input
+                 id="tenant-rooms-needed"
+                 type="number"
+                 min={1}
+                 step={1}
+                 {...form.register("roomsNeeded", { valueAsNumber: true })}
+               />
+             </Field>
+           </div>
+
+           {Array.from({ length: Math.max(form.watch("roomsNeeded") ?? 1, 1) }).map((_, index) => (
+             <div key={index} className="grid gap-4 sm:grid-cols-2 rounded-lg border border-border p-3">
+               <Field label={`Room ${index + 1} floor`} htmlFor={`tenant-room-floor-${index}`} optional>
+                 <Select
+                   value={form.watch(`rooms.${index}.floorId`) || ""}
+                   onValueChange={(value) => form.setValue(`rooms.${index}.floorId`, value, { shouldValidate: true })}
+                   disabled={!form.watch("buildingId")}
+                 >
+                   <SelectTrigger id={`tenant-room-floor-${index}`}>
+                     <SelectValue placeholder="Select floor" />
+                   </SelectTrigger>
+                   <SelectContent>
+                     {db.floors
+                       .filter((floor) => floor.buildingId === form.watch("buildingId"))
+                       .map((floor) => (
+                         <SelectItem key={floor.id} value={floor.id}>
+                           {floor.name}
+                         </SelectItem>
+                       ))}
+                   </SelectContent>
+                 </Select>
+               </Field>
+               <Field label={`Room ${index + 1} number`} htmlFor={`tenant-room-number-${index}`} optional hint="e.g. 02-A">
+                 <Input
+                   id={`tenant-room-number-${index}`}
+                   placeholder="02-A"
+                   {...form.register(`rooms.${index}.roomNumber`)}
+                 />
+               </Field>
+             </div>
+           ))}
 
           <Field
+
             label="Monthly rent (RWF)"
             htmlFor="tenant-rent"
             error={form.formState.errors.monthlyRent?.message}
