@@ -5,12 +5,13 @@ import {
   Ban,
   Check,
   Clock3,
-  Mail,
   MailPlus,
   MoreHorizontal,
+  Pencil,
   RefreshCw,
   Shield,
   ShieldCheck,
+  Trash2,
   UserRound,
   UserRoundX,
   Users,
@@ -18,7 +19,7 @@ import {
 import { toast } from "sonner";
 import type { SystemUser, SystemUserRole } from "@/types";
 import { formatDateTime, initials } from "@/lib/utils";
-import { updateUser } from "@/lib/services";
+import { deleteUser, updateUser } from "@/lib/services";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -26,6 +27,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { LoadingPanel } from "@/components/shared/states";
 import { DataTable, type DataTableColumn } from "@/components/tables/data-table";
 import { InviteUserDialog } from "./invite-user-dialog";
+import { EditUserDialog } from "./edit-user-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -50,6 +52,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const ROLES: SystemUserRole[] = [
   "Administrator",
@@ -74,6 +86,9 @@ export function UsersWorkspace() {
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [editingUser, setEditingUser] = React.useState<SystemUser | null>(null);
+  const [deletingUser, setDeletingUser] = React.useState<SystemUser | null>(null);
+  const [deleting, setDeleting] = React.useState(false);
 
   const selected = db.users.find((user) => user.id === selectedId);
   const filtered = db.users.filter(
@@ -94,6 +109,21 @@ export function UsersWorkspace() {
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not update user.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingUser) return;
+    setDeleting(true);
+    try {
+      await deleteUser(deletingUser.id);
+      toast.success("User deleted", { description: `${deletingUser.name} has been removed.` });
+      if (selectedId === deletingUser.id) setSelectedId(null);
+      setDeletingUser(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete user.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -160,18 +190,21 @@ export function UsersWorkspace() {
               <DropdownMenuItem onClick={() => setSelectedId(user.id)}>
                 <UserRound /> View details
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setEditingUser(user)}>
+                <Pencil /> Edit user
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
-                  toast.message(user.status === "invited" ? "Invitation re-sent" : "Email sent", {
-                    description: `Action completed for ${user.email}.`,
+                  toast.message("Action", {
+                    description: `No email action is configured for ${user.email}.`,
                   })
                 }
               >
-                <RefreshCw /> {user.status === "invited" ? "Resend invitation" : "Send email"}
+                <RefreshCw /> Send email
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {user.status === "active" ? (
-                <DropdownMenuItem variant="destructive" onClick={() => toggleStatus(user)}>
+                <DropdownMenuItem onClick={() => toggleStatus(user)}>
                   <Ban /> Suspend access
                 </DropdownMenuItem>
               ) : (
@@ -179,6 +212,9 @@ export function UsersWorkspace() {
                   <Check /> Activate access
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem variant="destructive" onClick={() => setDeletingUser(user)}>
+                <Trash2 /> Delete user
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -202,7 +238,7 @@ export function UsersWorkspace() {
         description="Team accounts, roles and permissions. Invitations and access changes are audited."
         actions={
           <Button size="sm" onClick={() => setInviteOpen(true)}>
-            <MailPlus className="size-3.5" /> Invite user
+            <MailPlus className="size-3.5" /> Add user
           </Button>
         }
       />
@@ -305,12 +341,37 @@ export function UsersWorkspace() {
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10.5px] text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <Shield className="size-3.5" /> Demo accounts are isolated from future authentication.
+          <Shield className="size-3.5" /> User access and roles are managed by administrators.
         </span>
-        <span>{db.users.length} accounts on this workspace</span>
+        <span>{db.users.length} accounts in this workspace</span>
       </div>
 
       {inviteOpen && <InviteUserDialog onClose={() => setInviteOpen(false)} />}
+      {editingUser && <EditUserDialog user={editingUser} onClose={() => setEditingUser(null)} />}
+
+      <AlertDialog open={!!deletingUser} onOpenChange={(open) => !open && !deleting && setDeletingUser(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete user?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove {deletingUser?.name || "this user"} and revoke their access. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={deleting}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleDelete();
+              }}
+            >
+              {deleting ? "Deleting..." : "Delete user"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {selected && (
         <Sheet open onOpenChange={(open) => !open && setSelectedId(null)}>
@@ -405,19 +466,15 @@ export function UsersWorkspace() {
                   variant="outline"
                   size="sm"
                   className="w-full justify-start"
-                  onClick={() =>
-                    toast.message("Invitation sent", {
-                      description: `Action completed for ${selected.email}.`,
-                    })
-                  }
+                  onClick={() => setEditingUser(selected)}
                 >
-                  <Mail className="size-3.5" /> Send account email
+                  <Pencil className="size-3.5" /> Edit user
                 </Button>
                 {selected.status === "active" ? (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-full justify-start text-destructive"
+                    className="w-full justify-start"
                     onClick={() => toggleStatus(selected)}
                   >
                     <Ban className="size-3.5" /> Suspend access
@@ -431,11 +488,18 @@ export function UsersWorkspace() {
                     <Check className="size-3.5" /> Activate access
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start text-destructive"
+                  onClick={() => setDeletingUser(selected)}
+                >
+                  <Trash2 className="size-3.5" /> Delete user
+                </Button>
               </div>
 
               <p className="text-[10px] leading-relaxed text-muted-foreground">
-                Access changes are recorded in the activity log. User accounts are part of the demo
-                data and reset when the demo database is reset.
+                Changes to user accounts, roles, and access are managed by administrators.
               </p>
             </div>
           </SheetContent>
