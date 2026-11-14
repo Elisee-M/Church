@@ -48,6 +48,8 @@ export async function createAgreement(input: AgreementInput) {
       agreement_number: nextAgreementNumber(input.startDate),
       start_date: input.startDate,
       end_date: input.endDate,
+      billing_day: 5,
+      payment_due_day: 5,
       status: status === "terminated" ? "terminated" : status,
       terms: input.notes || null,
     })

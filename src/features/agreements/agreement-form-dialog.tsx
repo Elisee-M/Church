@@ -73,11 +73,12 @@ export function AgreementFormDialog({
   const endDate = useWatch({ control: form.control, name: "endDate" });
   const totalRent = lineItems.reduce((sum, line) => sum + (Number(line.monthlyRent) || 0), 0);
 
-  const selectableSpaces = db.spaces.filter(
-    (space) =>
-      lineItems.some((line) => line.spaceId === space.id) ||
-      (space.status === "vacant" && !space.tenantId) ||
-      (agreement && space.tenantId === agreement.tenantId),
+  const selectedTenant = db.tenants.find((t) => t.id === tenantId);
+  const defaultMonthlyRent = selectedTenant?.monthlyRent ?? 0;
+
+  // Allow selecting spaces for the chosen tenant (no vacancy restriction). Conflicts are enforced by DB constraints.
+  const selectableSpaces = db.spaces.filter((space) =>
+    lineItems.some((line) => line.spaceId === space.id) || true,
   );
   const grouped = db.buildings
     .map((building) => ({
@@ -86,10 +87,10 @@ export function AgreementFormDialog({
     }))
     .filter((group) => group.spaces.length > 0);
 
-  const toggleSpace = (spaceId: string, monthlyRent: number) => {
+  const toggleSpace = (spaceId: string, spaceMonthlyRent: number) => {
     const index = lineItems.findIndex((line) => line.spaceId === spaceId);
     if (index >= 0) remove(index);
-    else append({ spaceId, monthlyRent });
+    else append({ spaceId, monthlyRent: defaultMonthlyRent > 0 ? defaultMonthlyRent : spaceMonthlyRent });
   };
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -129,8 +130,7 @@ export function AgreementFormDialog({
         <DialogHeader>
           <DialogTitle>{agreement ? "Edit agreement" : "New rental agreement"}</DialogTitle>
           <DialogDescription>
-            One agreement can cover multiple spaces, each with its own monthly rent. Rent is invoiced
-            together on a single monthly invoice.
+            Create an agreement for the selected tenant. You can assign spaces/rooms and set monthly rent (defaults to the tenant&apos;s rent when available).
           </DialogDescription>
         </DialogHeader>
 
@@ -174,7 +174,9 @@ export function AgreementFormDialog({
             <div className="max-h-[240px] space-y-3 overflow-y-auto rounded-lg border border-border p-3 thin-scrollbar">
               {grouped.length === 0 && (
                 <p className="py-4 text-center text-[11px] text-muted-foreground">
-                  No vacant spaces available. Add or release a space first.
+                  {db.spaces.length === 0
+                    ? "No spaces found. Add spaces in Properties first."
+                    : "No spaces available to select."}
                 </p>
               )}
               {grouped.map(({ building, spaces }) => (
