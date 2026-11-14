@@ -344,7 +344,11 @@ export function AgreementsWorkspace() {
                           const tenant = db.tenants.find((item) => item.id === selected.tenantId);
                           const building = db.buildings.find((item) => item.id === tenant?.buildingId);
                           const floor = db.floors.find((item) => item.id === tenant?.floorId);
-                          const rooms = tenant?.roomNumbers?.length ? tenant.roomNumbers.join(", ") : tenant?.roomNumber;
+                          const rooms = tenant?.rooms?.length
+                            ? tenant.rooms.map((room) => room.roomNumber).filter(Boolean).join(", ")
+                            : tenant?.roomNumbers?.length
+                              ? tenant.roomNumbers.join(", ")
+                              : tenant?.roomNumber;
                           return [building?.name, floor?.name, rooms ? "Room " + rooms : ""]
                             .filter(Boolean)
                             .join(" - ");

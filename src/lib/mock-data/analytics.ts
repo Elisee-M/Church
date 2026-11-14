@@ -104,17 +104,21 @@ export function getTenantSummary(db: Database, tenantId: string) {
   // Tenants may have a room assigned directly without a pre-created space. Expose
   // that rented unit so the portal shows the correct occupied-space count.
   if (spaces.length === 0 && tenant) {
-    const roomNumbers = tenant.roomNumbers?.length ? tenant.roomNumbers : tenant.roomNumber ? [tenant.roomNumber] : [];
-    const roomCount = Math.max(tenant.roomsNeeded ?? roomNumbers.length ?? 1, roomNumbers.length, 1);
+    const rooms = tenant.rooms?.length
+      ? tenant.rooms
+      : Array.from({ length: tenant.roomsNeeded ?? 1 }, (_, index) => ({
+          floorId: tenant.floorId,
+          roomNumber: (tenant.roomNumbers?.length ? tenant.roomNumbers : tenant.roomNumber ? [tenant.roomNumber] : [])[index],
+        }));
+    const roomCount = Math.max(rooms.length, 1);
     const rentPerRoom = (tenant.monthlyRent ?? 0) / roomCount;
-    for (let index = 0; index < roomCount; index += 1) {
-      const roomNumber = roomNumbers[index];
+    rooms.forEach((room, index) => {
       spaces.push({
         id: `${tenant.id}-room-${index + 1}`,
-        code: roomNumber || `Room ${index + 1}`,
-        name: roomNumber ? `Room ${roomNumber}` : "Rented room",
+        code: room.roomNumber || `Room ${index + 1}`,
+        name: room.roomNumber ? `Room ${room.roomNumber}` : "Rented room",
         buildingId: tenant.buildingId ?? "",
-        floorId: tenant.floorId ?? "",
+        floorId: room.floorId ?? tenant.floorId ?? "",
         category: "commercial",
         status: "occupied",
         sizeSqm: 0,
@@ -124,7 +128,7 @@ export function getTenantSummary(db: Database, tenantId: string) {
         features: [],
         history: [],
       });
-    }
+    });
   }
 
   const invoices = db.invoices

@@ -152,18 +152,26 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                   <p className="text-[12px]">{tenant.address}</p>
                 </div>
               </div>
-              {(tenant.buildingId || tenant.floorId || tenant.roomNumber) && (
+              {(tenant.buildingId || tenant.rooms?.length) && (
                 <div className="flex items-start gap-2.5">
                   <Building2 className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                   <div>
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Location</p>
                     <p className="text-[12px]">
                       {db.buildings.find((b) => b.id === tenant.buildingId)?.name ?? "Building"}
-                      {tenant.floorId ? ` �� ${db.floors.find((f) => f.id === tenant.floorId)?.name ?? "Floor"}` : ""}
-                      {(tenant.roomNumbers?.length ? tenant.roomNumbers : tenant.roomNumber ? [tenant.roomNumber] : []).length
-                        ? ` �� Room ${(tenant.roomNumbers?.length ? tenant.roomNumbers : tenant.roomNumber ? [tenant.roomNumber] : []).join(", ")}`
-                        : ""}
                     </p>
+                    <div className="mt-1 space-y-1 text-[11px] text-muted-foreground">
+                      {(tenant.rooms?.length
+                        ? tenant.rooms
+                        : Array.from({ length: tenant.roomsNeeded ?? 1 }, (_, index) => ({
+                            floorId: tenant.floorId,
+                            roomNumber: (tenant.roomNumbers?.length ? tenant.roomNumbers : tenant.roomNumber ? [tenant.roomNumber] : [])[index],
+                          }))).map((room, index) => (
+                        <p key={index}>
+                          {db.floors.find((floor) => floor.id === room.floorId)?.name ?? "Floor"} �� Room {room.roomNumber || index + 1}
+                        </p>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}

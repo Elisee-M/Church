@@ -164,7 +164,7 @@ export function AgreementFormDialog({
             <p className="mt-1">
               {db.buildings.find((building) => building.id === selectedTenant?.buildingId)?.name ?? "Building"}
               {selectedTenant?.floorId ? " - " + (db.floors.find((floor) => floor.id === selectedTenant.floorId)?.name ?? "Floor") : ""}
-              {(selectedTenant?.roomNumbers?.length || selectedTenant?.roomNumber) ? " - Room " + (selectedTenant.roomNumbers?.length ? selectedTenant.roomNumbers.join(", ") : selectedTenant.roomNumber) : ""}
+              {selectedTenant?.rooms?.length ? " - Room " + selectedTenant.rooms.map((room) => room.roomNumber).filter(Boolean).join(", ") : (selectedTenant?.roomNumbers?.length || selectedTenant?.roomNumber) ? " - Room " + (selectedTenant.roomNumbers?.length ? selectedTenant.roomNumbers.join(", ") : selectedTenant.roomNumber) : ""}
             </p>
           </div>
 

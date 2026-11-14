@@ -19,6 +19,7 @@ export async function createTenant(input: {
   floorId?: string;
   roomNumber?: string;
   roomNumbers?: string[];
+  rooms?: { floorId?: string; roomNumber?: string }[];
   monthlyRent?: number;
   roomsNeeded?: number;
   notes?: string;
@@ -38,7 +39,8 @@ export async function createTenant(input: {
     address: input.address || null,
     building_id: input.buildingId || null,
     floor_id: input.floorId || null,
-    room_number: (input.roomNumbers && input.roomNumbers.length ? input.roomNumbers : input.roomNumber ? [input.roomNumber] : []).filter(Boolean).join(", ") || null,
+    room_number: (input.rooms?.map((room) => room.roomNumber).filter(Boolean) as string[] ?? input.roomNumbers ?? (input.roomNumber ? [input.roomNumber] : [])).filter(Boolean).join(", ") || null,
+    rooms: input.rooms ?? null,
     monthly_rent: input.monthlyRent ?? null,
     rooms_needed: input.roomsNeeded ?? null,
     emergency_contact_phone: input.altPhone || null,
@@ -64,6 +66,7 @@ export async function updateTenant(
     floorId?: string;
     roomNumber?: string;
     roomNumbers?: string[];
+    rooms?: { floorId?: string; roomNumber?: string }[];
     monthlyRent?: number;
     roomsNeeded?: number;
     notes?: string;
@@ -80,13 +83,15 @@ export async function updateTenant(
   if (input.address !== undefined) patch.address = input.address;
   if (input.buildingId !== undefined) patch.building_id = input.buildingId || null;
   if (input.floorId !== undefined) patch.floor_id = input.floorId || null;
-  if (input.roomNumbers !== undefined || input.roomNumber !== undefined) {
-    const numbers = input.roomNumbers && input.roomNumbers.length
-      ? input.roomNumbers
-      : input.roomNumber
-        ? [input.roomNumber]
-        : [];
+  if (input.rooms !== undefined || input.roomNumbers !== undefined || input.roomNumber !== undefined) {
+    const numbers = input.rooms?.map((room) => room.roomNumber).filter(Boolean) as string[] ??
+      (input.roomNumbers && input.roomNumbers.length
+        ? input.roomNumbers
+        : input.roomNumber
+          ? [input.roomNumber]
+          : []);
     patch.room_number = numbers.filter(Boolean).join(", ") || null;
+    if (input.rooms !== undefined) patch.rooms = input.rooms;
   }
   if (input.altPhone !== undefined) patch.emergency_contact_phone = input.altPhone;
   if (input.contactName !== undefined) patch.company_name = input.contactName;
