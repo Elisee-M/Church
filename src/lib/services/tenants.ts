@@ -14,6 +14,9 @@ export async function createTenant(input: {
   tin?: string;
   companyReg?: string;
   address: string;
+  buildingId?: string;
+  floorId?: string;
+  roomNumber?: string;
   notes?: string;
 }) {
   const supabase = createClient();
@@ -29,6 +32,9 @@ export async function createTenant(input: {
     national_id: input.nationalId || null,
     company_tin: input.tin || null,
     address: input.address || null,
+    building_id: input.buildingId || null,
+    floor_id: input.floorId || null,
+    room_number: input.roomNumber || null,
     emergency_contact_phone: input.altPhone || null,
   });
   if (error) throw new Error(error.message);
@@ -48,6 +54,9 @@ export async function updateTenant(
     tin?: string;
     companyReg?: string;
     address: string;
+    buildingId?: string;
+    floorId?: string;
+    roomNumber?: string;
     notes?: string;
   }>,
 ) {
@@ -60,6 +69,9 @@ export async function updateTenant(
   if (input.nationalId !== undefined) patch.national_id = input.nationalId;
   if (input.tin !== undefined) patch.company_tin = input.tin;
   if (input.address !== undefined) patch.address = input.address;
+  if (input.buildingId !== undefined) patch.building_id = input.buildingId || null;
+  if (input.floorId !== undefined) patch.floor_id = input.floorId || null;
+  if (input.roomNumber !== undefined) patch.room_number = input.roomNumber || null;
   if (input.altPhone !== undefined) patch.emergency_contact_phone = input.altPhone;
   if (input.contactName !== undefined) patch.company_name = input.contactName;
   const { error } = await supabase.from("tenants").update(patch).eq("id", id);

@@ -59,6 +59,9 @@ export type Tenant = {
   tin?: string;
   companyReg?: string;
   address: string;
+  buildingId?: string;
+  floorId?: string;
+  roomNumber?: string;
   since: string;
   status: "active" | "inactive";
   notes?: string;

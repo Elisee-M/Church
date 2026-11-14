@@ -13,6 +13,9 @@ export const tenantSchema = z.object({
   tin: z.string().optional(),
   companyReg: z.string().optional(),
   address: z.string().min(3, "Enter the tenant's address."),
+  buildingId: z.string().optional(),
+  floorId: z.string().optional(),
+  roomNumber: z.string().optional(),
   notes: z.string().optional(),
 });
 

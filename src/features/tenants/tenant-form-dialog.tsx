@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import type { Tenant } from "@/types";
 import { createTenant, updateTenant } from "@/lib/services";
 import { tenantSchema, type TenantFormValues } from "@/lib/validations/schemas";
+import { useDatabase } from "@/hooks/use-database";
 import { Field } from "@/components/shared/form-field";
 import {
   Dialog,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/select";
 
 export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose: () => void }) {
+  const db = useDatabase();
   const form = useForm<TenantFormValues>({
     resolver: zodResolver(tenantSchema),
     defaultValues: {
@@ -40,6 +42,9 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
       tin: tenant?.tin ?? "",
       companyReg: tenant?.companyReg ?? "",
       address: tenant?.address ?? "",
+      buildingId: tenant?.buildingId ?? "",
+      floorId: tenant?.floorId ?? "",
+      roomNumber: tenant?.roomNumber ?? "",
       notes: tenant?.notes ?? "",
     },
   });
@@ -135,6 +140,52 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
             </Field>
             <Field label="Company reg." htmlFor="tenant-reg" optional>
               <Input id="tenant-reg" placeholder="RCCM…" {...form.register("companyReg")} />
+            </Field>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Building" htmlFor="tenant-building" optional>
+              <Select
+                value={form.watch("buildingId") || ""}
+                onValueChange={(value) => {
+                  form.setValue("buildingId", value, { shouldValidate: true });
+                  form.setValue("floorId", "", { shouldValidate: true });
+                }}
+              >
+                <SelectTrigger id="tenant-building">
+                  <SelectValue placeholder="Select building" />
+                </SelectTrigger>
+                <SelectContent>
+                  {db.buildings.map((building) => (
+                    <SelectItem key={building.id} value={building.id}>
+                      {building.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Floor" htmlFor="tenant-floor" optional>
+              <Select
+                value={form.watch("floorId") || ""}
+                onValueChange={(value) => form.setValue("floorId", value, { shouldValidate: true })}
+                disabled={!form.watch("buildingId")}
+              >
+                <SelectTrigger id="tenant-floor">
+                  <SelectValue placeholder="Select floor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {db.floors
+                    .filter((floor) => floor.buildingId === form.watch("buildingId"))
+                    .map((floor) => (
+                      <SelectItem key={floor.id} value={floor.id}>
+                        {floor.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Room no." htmlFor="tenant-room" optional hint="e.g. 02-A">
+              <Input id="tenant-room" placeholder="02-A" {...form.register("roomNumber")} />
             </Field>
           </div>
 
