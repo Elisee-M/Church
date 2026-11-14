@@ -63,7 +63,7 @@ export function TenantPay() {
     "";
   const [invoiceId, setInvoiceId] = React.useState(defaultInvoiceId);
   const [method, setMethod] = React.useState<"mtn_momo" | "airtel_money" | "bank_transfer">(
-    "mtn_momo",
+    "bank_transfer",
   );
   const [momoPhase, setMomoPhase] = React.useState<MomoPhase>("form");
   const [momoReference, setMomoReference] = React.useState<string | null>(null);
@@ -256,7 +256,7 @@ export function TenantPay() {
             </div>
           </SectionCard>
 
-          <SectionCard title="2. Payment method" description="Choose how you want to pay">
+          {false && <SectionCard title="2. Payment method" description="Choose how you want to pay">
             <div className="grid gap-2 px-5 pb-5 sm:grid-cols-3">
               {[
                 {
@@ -304,8 +304,9 @@ export function TenantPay() {
               ))}
             </div>
           </SectionCard>
+          }
 
-          {method !== "bank_transfer" ? (
+          {false ? (
             <SectionCard
               title="3. Confirm mobile money payment"
               description="A confirmation request is simulated on your device â€” no PIN is ever entered here."

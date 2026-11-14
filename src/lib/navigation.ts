@@ -45,14 +45,7 @@ export const NAVIGATION: Record<Role, NavGroup[]> = {
         { titleKey: "nav.properties", href: "/admin/properties", icon: Building2 },
         { titleKey: "nav.tenants", href: "/admin/tenants", icon: Users },
         { titleKey: "nav.agreements", href: "/admin/agreements", icon: ScrollText },
-        { titleKey: "nav.invoices", href: "/admin/invoices", icon: ReceiptText, badge: "overdueInvoices" },
-        { titleKey: "nav.payments", href: "/admin/payments", icon: Wallet },
-        { titleKey: "nav.expenses", href: "/admin/expenses", icon: TrendingDown },
       ],
-    },
-    {
-      labelKey: "nav.finance",
-      items: [{ titleKey: "nav.reports", href: "/admin/reports", icon: BarChart3 }],
     },
     {
       labelKey: "nav.account",

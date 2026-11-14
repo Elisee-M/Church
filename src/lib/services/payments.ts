@@ -40,7 +40,7 @@ export async function recordPayment(input: RecordPaymentInput) {
     .from("invoices")
     .select("id, organization_id, tenant_id")
     .eq("id", input.invoiceId)
-    .single();
+    .maybeSingle();
   if (invErr || !inv) throw new Error(invErr?.message || "Invoice not found.");
 
   const status = dbStatus(input.status ?? "completed");
@@ -102,7 +102,7 @@ export async function simulateMobileMoneyPayment(input: {
     .from("invoices")
     .select("id, organization_id, tenant_id")
     .eq("id", input.invoiceId)
-    .single();
+    .maybeSingle();
   if (invErr || !inv) throw new Error(invErr?.message || "Invoice not found.");
   const ref = `SIM-${Date.now().toString().slice(-8)}`;
   const succeeded = input.outcome === "success";
@@ -141,7 +141,7 @@ export async function submitBankTransferProof(input: {
     .from("invoices")
     .select("id, organization_id, tenant_id")
     .eq("id", input.invoiceId)
-    .single();
+    .maybeSingle();
   if (invErr || !inv) throw new Error(invErr?.message || "Invoice not found.");
   const { error } = await supabase.from("payments").insert({
     organization_id: (inv as { organization_id: string }).organization_id,
