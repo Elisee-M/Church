@@ -15,6 +15,18 @@ import { ChartTooltip } from "./chart-tooltip";
 
 const NAMES = { expected: "Expected", collected: "Collected", expenses: "Expenses" };
 
+/** Compact axis labels that scale to the actual data instead of always using millions. */
+function formatAxisValue(value: number) {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(abs % 1_000_000 === 0 ? 0 : 1)}M`;
+  }
+  if (abs >= 1_000) {
+    return `${(value / 1_000).toFixed(abs % 1_000 === 0 ? 0 : 1)}k`;
+  }
+  return `${value}`;
+}
+
 export function FinancialChart({ data, height = 280 }: { data: MonthlyFinancialPoint[]; height?: number }) {
   return (
     <div className="w-full">
@@ -47,7 +59,7 @@ export function FinancialChart({ data, height = 280 }: { data: MonthlyFinancialP
             dy={8}
           />
           <YAxis
-            tickFormatter={(value: number) => `${(value / 1_000_000).toFixed(0)}M`}
+            tickFormatter={formatAxisValue}
             tickLine={false}
             axisLine={false}
             tick={{ fill: "var(--muted-foreground)", fontSize: 10.5 }}
