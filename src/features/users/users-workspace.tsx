@@ -256,7 +256,7 @@ export function UsersWorkspace() {
           emptyDescription="Adjust the role or status filter, or invite a new team member."
           emptyAction={
             <Button variant="outline" size="sm" onClick={() => setInviteOpen(true)}>
-              <MailPlus className="size-3.5" /> Invite user
+              <MailPlus className="size-3.5" /> Add user
             </Button>
           }
           toolbar={

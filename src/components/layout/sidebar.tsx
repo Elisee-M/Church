@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronsLeft, ChevronsRight, CircleDot } from "lucide-react";
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 import type { Role } from "@/types";
 import { cn } from "@/lib/utils";
 
