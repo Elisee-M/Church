@@ -27,8 +27,22 @@ export async function createBuilding(input: {
     .select("id")
     .single();
   if (error) throw new Error(error.message);
+  const buildingId = data.id as string;
+
+  const floorsCount = input.floorsCount ?? 0;
+  if (floorsCount > 0) {
+    const floorRows = Array.from({ length: floorsCount }, (_, index) => ({
+      building_id: buildingId,
+      name: `Floor ${index + 1}`,
+      floor_number: index + 1,
+      description: null,
+    }));
+    const { error: floorError } = await supabase.from("floors").insert(floorRows);
+    if (floorError) throw new Error(floorError.message);
+  }
+
   await refreshDatabase();
-  return data.id as string;
+  return buildingId;
 }
 
 export async function updateBuilding(
@@ -43,6 +57,29 @@ export async function updateBuilding(
   if (input.floorsCount !== undefined) patch.number_of_floors = input.floorsCount;
   const { error } = await supabase.from("buildings").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
+
+  if (input.floorsCount !== undefined) {
+    const { data: existing } = await supabase
+      .from("floors")
+      .select("floor_number")
+      .eq("building_id", id);
+    const existingNumbers = new Set((existing ?? []).map((floor: { floor_number: number }) => floor.floor_number));
+    const missing = Array.from({ length: input.floorsCount }, (_, index) => index + 1).filter(
+      (floorNumber) => !existingNumbers.has(floorNumber),
+    );
+    if (missing.length) {
+      const { error: floorError } = await supabase.from("floors").insert(
+        missing.map((floorNumber) => ({
+          building_id: id,
+          name: `Floor ${floorNumber}`,
+          floor_number: floorNumber,
+          description: null,
+        })),
+      );
+      if (floorError) throw new Error(floorError.message);
+    }
+  }
+
   await refreshDatabase();
 }
 
