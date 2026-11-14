@@ -14,6 +14,7 @@ import type { NotificationType } from "@/types";
 
 import { formatDateTime, cn } from "@/lib/utils";
 import { useDatabase } from "@/hooks/use-database";
+import { useCurrentTenantId } from "@/hooks/use-current-tenant";
 import { markNotificationRead, markNotificationsRead } from "@/lib/services";
 import {
   DropdownMenu,
@@ -36,8 +37,9 @@ export function NotificationsMenu() {
   const router = useRouter();
   const db = useDatabase();
   const isTenant = pathname.startsWith("/tenant");
+  const currentTenantId = useCurrentTenantId();
   const notifications = db.notifications
-    .filter((notification) => (isTenant ? notification.tenantId === (db.tenants[0]?.id ?? "") : !notification.tenantId))
+    .filter((notification) => (isTenant ? notification.tenantId === currentTenantId : !notification.tenantId))
     .slice(0, 8);
   const unread = notifications.filter((notification) => !notification.read).length;
 
@@ -65,7 +67,7 @@ export function NotificationsMenu() {
           </div>
           {unread > 0 && (
             <button
-              onClick={async () => { try { await markNotificationsRead(isTenant ? db.tenants[0]?.id : undefined); } catch {} }}
+              onClick={async () => { try { await markNotificationsRead(isTenant ? currentTenantId : undefined); } catch {} }}
               className="flex items-center gap-1 text-[11px] font-medium text-primary hover:underline dark:text-foreground"
             >
               <CheckCheck className="size-3.5" /> Mark all read

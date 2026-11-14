@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { navForRole } from "@/lib/navigation";
 import { useTranslation } from "@/lib/providers/locale-provider";
 import { useDatabase } from "@/hooks/use-database";
+import { useCurrentTenantId } from "@/hooks/use-current-tenant";
 import { invoiceBalance } from "@/lib/mock-data/analytics";
 import { Logo } from "./logo";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -27,7 +28,7 @@ export function Sidebar({ role, collapsed, mobile, onToggle, onNavigate }: Sideb
   const { t } = useTranslation();
   const groups = navForRole(role);
 
-  const currentTenantId = db.tenants[0]?.id ?? "";
+  const currentTenantId = useCurrentTenantId();
   const badgeCounts = {
     overdueInvoices: db.invoices.filter(
       (invoice) =>

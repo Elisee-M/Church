@@ -17,6 +17,7 @@ import type { AppDocument, DocumentType, Invoice, Payment } from "@/types";
 
 import { formatDate } from "@/lib/utils";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
+import { useCurrentTenantId } from "@/hooks/use-current-tenant";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { EmptyState, LoadingPanel } from "@/components/shared/states";
@@ -69,7 +70,7 @@ export function TenantDocuments() {
     | { kind: "ebm"; invoice: Invoice }
     | null
   >(null);
-  const tenantId = db.tenants[0]?.id ?? "";
+  const tenantId = useCurrentTenantId();
   const tenant = db.tenants.find((item) => item.id === tenantId);
   const documents = db.documents
     .filter((document) => document.tenantId === tenantId)

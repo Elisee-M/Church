@@ -20,6 +20,7 @@ import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { getTenantSummary } from "@/lib/mock-data/analytics";
 import { updateTenant } from "@/lib/services";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
+import { useCurrentTenantId } from "@/hooks/use-current-tenant";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -32,7 +33,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 export function TenantProfile() {
   const db = useDatabase();
   const ready = usePageReady();
-  const tenantId = db.tenants[0]?.id ?? "";
+  const tenantId = useCurrentTenantId();
   const summary = getTenantSummary(db, tenantId);
   const tenant = summary.tenant;
 

@@ -30,6 +30,7 @@ import {
   type MomoPaymentFormValues,
 } from "@/lib/validations/schemas";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
+import { useCurrentTenantId } from "@/hooks/use-current-tenant";
 import { PageHeader } from "@/components/shared/page-header";
 import { SectionCard } from "@/components/shared/section-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -53,7 +54,7 @@ export function TenantPay() {
   const ready = usePageReady();
   const searchParams = useSearchParams();
   const requestedInvoice = searchParams.get("invoice");
-  const tenantId = db.tenants[0]?.id ?? "";
+  const tenantId = useCurrentTenantId();
   const summary = getTenantSummary(db, tenantId);
   const openInvoices = summary.invoices.filter((invoice) => invoiceBalance(invoice) > 0);
   const defaultInvoiceId =

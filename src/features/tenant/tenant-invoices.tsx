@@ -22,6 +22,7 @@ import {
   invoiceIsPastDue,
 } from "@/lib/mock-data/analytics";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
+import { useCurrentTenantId } from "@/hooks/use-current-tenant";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -49,7 +50,7 @@ export function TenantInvoices() {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [periodFilter, setPeriodFilter] = React.useState("all");
-  const tenantId = db.tenants[0]?.id ?? "";
+  const tenantId = useCurrentTenantId();
   const summary = getTenantSummary(db, tenantId);
   const tenant = summary.tenant;
 

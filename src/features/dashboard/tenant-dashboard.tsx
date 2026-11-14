@@ -20,6 +20,7 @@ import { PAYMENT_METHOD_SHORT, SPACE_CATEGORY_LABELS } from "@/lib/constants";
 import { cn, formatCurrency, formatDate, formatPercent, daysBetween } from "@/lib/utils";
 import { getTenantSummary, invoiceBalance, todayISO } from "@/lib/mock-data/analytics";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
+import { useCurrentTenantId } from "@/hooks/use-current-tenant";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { SectionCard } from "@/components/shared/section-card";
@@ -31,7 +32,7 @@ import { Badge } from "@/components/ui/badge";
 export function TenantDashboard() {
   const db = useDatabase();
   const ready = usePageReady();
-  const tenantId = db.tenants[0]?.id ?? "";
+  const tenantId = useCurrentTenantId();
   const summary = getTenantSummary(db, tenantId);
   const tenant = summary.tenant;
   const invoice = summary.currentInvoice;

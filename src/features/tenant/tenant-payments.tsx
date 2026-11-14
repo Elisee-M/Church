@@ -18,6 +18,7 @@ import { PAYMENT_METHOD_SHORT, PAYMENT_STATUS_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { getTenantSummary } from "@/lib/mock-data/analytics";
 import { useDatabase, usePageReady } from "@/hooks/use-database";
+import { useCurrentTenantId } from "@/hooks/use-current-tenant";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -46,7 +47,7 @@ export function TenantPayments() {
   const ready = usePageReady();
   const [statusFilter, setStatusFilter] = React.useState("all");
   const [receipt, setReceipt] = React.useState<Payment | null>(null);
-  const tenantId = db.tenants[0]?.id ?? "";
+  const tenantId = useCurrentTenantId();
   const summary = getTenantSummary(db, tenantId);
   const tenant = summary.tenant;
 

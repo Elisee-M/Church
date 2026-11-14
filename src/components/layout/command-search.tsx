@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Building2, FileText, Search, Users } from "lucide-react";
 
 import { useDatabase } from "@/hooks/use-database";
+import { useCurrentTenantId } from "@/hooks/use-current-tenant";
 import { navForRole } from "@/lib/navigation";
 import { useTranslation } from "@/lib/providers/locale-provider";
 import { formatCurrency } from "@/lib/utils";
@@ -60,7 +61,7 @@ export function CommandSearch() {
           .slice(0, 4);
 
   const invoices = db.invoices
-    .filter((invoice) => (role === "tenant" ? invoice.tenantId === (db.tenants[0]?.id ?? "") : true))
+    .filter((invoice) => (role === "tenant" ? invoice.tenantId === (useCurrentTenantId()) : true))
     .filter(
       (invoice) =>
         invoice.number.toLowerCase().includes(normalized) ||
