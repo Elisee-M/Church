@@ -152,6 +152,19 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                   <p className="text-[12px]">{tenant.address}</p>
                 </div>
               </div>
+              {(tenant.buildingId || tenant.floorId || tenant.roomNumber) && (
+                <div className="flex items-start gap-2.5">
+                  <Building2 className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Location</p>
+                    <p className="text-[12px]">
+                      {db.buildings.find((b) => b.id === tenant.buildingId)?.name ?? "Building"}
+                      {tenant.floorId ? ` �� ${db.floors.find((f) => f.id === tenant.floorId)?.name ?? "Floor"}` : ""}
+                      {tenant.roomNumber ? ` �� Room ${tenant.roomNumber}` : ""}
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-start gap-2.5">
                 <CalendarDays className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                 <div>
