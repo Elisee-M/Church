@@ -102,3 +102,76 @@ export async function createUserAction(input: CreateUserInput) {
   await ensureProfileAndRole({ userId: created.user.id, orgId, actorId, input });
   return { userId: created.user.id, created: true };
 }
+
+export type UpdateManagedUserInput = {
+  userId: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: ManagedUserRole;
+  status?: "active" | "suspended";
+};
+
+export async function updateManagedUserAction(input: UpdateManagedUserInput) {
+  const { actorId, orgId } = await requireAdminAndOrg();
+  if (!input.userId) throw new Error("User is required.");
+  const admin = createAdminClient();
+
+  // Prevent admin from suspending/removing their own admin access in risky ways? allow normal edits except maybe not critical here.
+  const profilePatch: Record<string, any> = {};
+  if (input.name !== undefined) profilePatch.full_name = input.name;
+  if (input.email !== undefined) profilePatch.email = input.email;
+  if (input.phone !== undefined) profilePatch.phone = input.phone ?? null;
+  if (input.status !== undefined) profilePatch.is_active = input.status === "active";
+
+  const authPatch: Record<string, any> = {};
+  if (input.email !== undefined) {
+    authPatch.email = input.email;
+    authPatch.email_confirm = true;
+  }
+  if (input.name !== undefined || input.phone !== undefined) {
+    authPatch.user_metadata = {
+      ...(input.name !== undefined ? { full_name: input.name } : {}),
+      ...(input.phone !== undefined ? { phone: input.phone ?? null } : {}),
+    };
+  }
+
+  if (Object.keys(authPatch).length > 0) {
+    const { error } = await admin.auth.admin.updateUserById(input.userId, authPatch);
+    if (error) throw new Error(error.message);
+  }
+
+  if (Object.keys(profilePatch).length > 0) {
+    const { error } = await admin.from("profiles").update(profilePatch).eq("id", input.userId);
+    if (error) throw new Error(error.message);
+  }
+
+  if (input.role !== undefined) {
+    // Replace roles for this org with selected mapped role (if mapped)
+    const dbRole = mapRole(input.role);
+    await admin.from("user_roles").delete().eq("user_id", input.userId).eq("organization_id", orgId);
+    if (dbRole) {
+      const { error } = await admin.from("user_roles").insert({
+        user_id: input.userId,
+        organization_id: orgId,
+        role: dbRole,
+        created_by: actorId,
+      });
+      if (error) throw new Error(error.message);
+    }
+    // If role not mapped (Property Manager/Viewer), we clear app_role rows; UI-level role still shown from selection context not stored.
+  }
+
+  return { updated: true };
+}
+
+export async function deleteUserAction(userId: string) {
+  const { actorId } = await requireAdminAndOrg();
+  if (!userId) throw new Error("User is required.");
+  if (userId === actorId) throw new Error("You cannot delete your own account.");
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) throw new Error(error.message);
+  return { deleted: true };
+}
