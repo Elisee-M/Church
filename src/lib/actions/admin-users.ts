@@ -7,6 +7,33 @@ import type { SystemUser, SystemUserRole } from "@/types";
 
 type ManagedUserRole = "Administrator" | "Accountant" | "Property Manager" | "Viewer" | "Tenant";
 
+type ProfilePatch = {
+  full_name?: string;
+  email?: string;
+  phone?: string | null;
+  is_active?: boolean;
+  managed_role?: ManagedUserRole;
+};
+
+type AuthPatch = {
+  email?: string;
+  email_confirm?: boolean;
+  user_metadata?: Record<string, string | null>;
+};
+
+type RoleRow = { user_id: string; role: string };
+
+type ProfileRow = {
+  id: string;
+  full_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  managed_role?: string | null;
+  is_active?: boolean | null;
+  updated_at?: string | null;
+  created_at?: string | null;
+};
+
 export type InviteUserInput = {
   name: string;
   email: string;
@@ -124,14 +151,14 @@ export async function updateManagedUserAction(input: UpdateManagedUserInput) {
   const admin = createAdminClient();
 
   // Prevent admin from suspending/removing their own admin access in risky ways? allow normal edits except maybe not critical here.
-  const profilePatch: Record<string, any> = {};
+  const profilePatch: ProfilePatch = {};
   if (input.name !== undefined) profilePatch.full_name = input.name;
   if (input.email !== undefined) profilePatch.email = input.email;
   if (input.phone !== undefined) profilePatch.phone = input.phone ?? null;
   if (input.status !== undefined) profilePatch.is_active = input.status === "active";
   if (input.role !== undefined) profilePatch.managed_role = input.role;
 
-  const authPatch: Record<string, any> = {};
+  const authPatch: AuthPatch = {};
   if (input.email !== undefined) {
     authPatch.email = input.email;
     authPatch.email_confirm = true;
@@ -211,14 +238,14 @@ export async function listManagedUsersAction(): Promise<SystemUser[]> {
   if (rErr) throw new Error(rErr.message);
 
   const rolesByUser = new Map<string, string[]>();
-  for (const r of roles ?? []) {
-    const list = rolesByUser.get((r as any).user_id) ?? [];
-    list.push((r as any).role);
-    rolesByUser.set((r as any).user_id, list);
+  for (const r of (roles ?? []) as RoleRow[]) {
+    const list = rolesByUser.get(r.user_id) ?? [];
+    list.push(r.role);
+    rolesByUser.set(r.user_id, list);
   }
 
   // Admins can view all workspace user profiles; roles are scoped to this organization.
-  const allProfiles = (profiles ?? []) as any[];
+  const allProfiles = (profiles ?? []) as ProfileRow[];
   return allProfiles.map((p) => {
     const rs = rolesByUser.get(p.id) ?? [];
     const role = roleLabel(rs, p.managed_role);

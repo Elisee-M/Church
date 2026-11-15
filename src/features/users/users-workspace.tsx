@@ -91,29 +91,35 @@ export function UsersWorkspace() {
   const [deletingUser, setDeletingUser] = React.useState<SystemUser | null>(null);
   const [deleting, setDeleting] = React.useState(false);
   const [users, setUsers] = React.useState<SystemUser[]>([]);
-  const [usersLoading, setUsersLoading] = React.useState(true);
   const [usersError, setUsersError] = React.useState<string | null>(null);
 
   const refreshUsers = React.useCallback(async () => {
     try {
-      setUsersError(null);
       const list = await listManagedUsersAction();
       setUsers(list);
+      setUsersError(null);
     } catch (error) {
       setUsersError(error instanceof Error ? error.message : "Could not load users.");
-    } finally {
-      setUsersLoading(false);
     }
   }, []);
 
+  // Refresh on mount and whenever global data changes after a mutation.
   React.useEffect(() => {
-    void refreshUsers();
-  }, [refreshUsers]);
-
-  // refresh when global data changes (after mutations)
-  React.useEffect(() => {
-    void refreshUsers();
-  }, [db, refreshUsers]);
+    let cancelled = false;
+    listManagedUsersAction()
+      .then((list) => {
+        if (cancelled) return;
+        setUsers(list);
+        setUsersError(null);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setUsersError(error instanceof Error ? error.message : "Could not load users.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [db]);
 
   const selected = users.find((user) => user.id === selectedId);
   const filtered = users.filter(
