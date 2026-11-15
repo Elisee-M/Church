@@ -73,8 +73,9 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
     },
   });
   const type = useWatch({ control: form.control, name: "type" });
-  const roomsNeeded = form.watch("roomsNeeded");
-  const watchedRooms = form.watch("rooms");
+  const roomsNeeded = useWatch({ control: form.control, name: "roomsNeeded" });
+  const buildingId = useWatch({ control: form.control, name: "buildingId" }) ?? "";
+  const watchedRooms = useWatch({ control: form.control, name: "rooms" });
   React.useEffect(() => {
     const count = Math.max(roomsNeeded ?? 1, 1);
     const currentNumbers = form.getValues("roomNumbers") ?? [];
@@ -222,7 +223,7 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
                      <div className="grid gap-4 sm:grid-cols-2">
              <Field label="Building" htmlFor="tenant-building" optional>
                <Select
-                 value={form.watch("buildingId") || ""}
+                 value={buildingId || ""}
                  onValueChange={(value) => {
                    form.setValue("buildingId", value, { shouldValidate: true });
                  }}
@@ -250,20 +251,20 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
              </Field>
            </div>
 
-           {Array.from({ length: Math.max(form.watch("roomsNeeded") ?? 1, 1) }).map((_, index) => (
+           {Array.from({ length: Math.max(roomsNeeded ?? 1, 1) }).map((_, index) => (
              <div key={index} className="grid gap-4 rounded-lg border border-border p-3 sm:grid-cols-3">
                <Field label={`Room ${index + 1} floor`} htmlFor={`tenant-room-floor-${index}`} optional>
                  <Select
-                   value={form.watch(`rooms.${index}.floorId`) || ""}
+                   value={watchedRooms?.[index]?.floorId || ""}
                    onValueChange={(value) => form.setValue(`rooms.${index}.floorId`, value, { shouldValidate: true })}
-                   disabled={!form.watch("buildingId")}
+                   disabled={!buildingId}
                  >
                    <SelectTrigger id={`tenant-room-floor-${index}`}>
                      <SelectValue placeholder="Select floor" />
                    </SelectTrigger>
                    <SelectContent>
                      {db.floors
-                       .filter((floor) => floor.buildingId === form.watch("buildingId"))
+                       .filter((floor) => floor.buildingId === buildingId)
                        .map((floor) => (
                          <SelectItem key={floor.id} value={floor.id}>
                            {floor.name}
