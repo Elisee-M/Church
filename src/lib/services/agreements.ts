@@ -61,6 +61,7 @@ export async function createAgreement(input: AgreementInput) {
     const rows = input.lineItems.map((line) => ({
       agreement_id: agreement.id,
       space_id: line.spaceId || null,
+      label: line.label || null,
       monthly_rent_amount: line.monthlyRent,
       start_date: input.startDate,
       end_date: input.endDate,
@@ -93,38 +94,34 @@ export async function updateAgreement(id: string, patch: Partial<AgreementInput>
   if (patch.lineItems) {
     const { data: existing } = await supabase
       .from("agreement_spaces")
-      .select("id, space_id")
+      .select("space_id")
       .eq("agreement_id", id);
-    const prev = (existing ?? []) as Array<{ id: string; space_id: string }>;
-    const nextIds = new Set(patch.lineItems.map((l) => l.spaceId ?? null));
-    const removed = prev.filter((p) => !nextIds.has(p.space_id ?? null));
-    if (removed.length) {
-      await supabase.from("agreement_spaces").delete().in("id", removed.map((r) => r.id));
-      const removedSpaceIds = removed.map((r) => r.space_id).filter(Boolean) as string[];
-      if (removedSpaceIds.length) {
-        await supabase.from("spaces").update({ occupancy_status: "vacant" }).in("id", removedSpaceIds);
-      }
+    const prevSpaceIds = (existing ?? [])
+      .map((row: { space_id: string | null }) => row.space_id)
+      .filter(Boolean) as string[];
+    const nextSpaceIds = patch.lineItems.map((line) => line.spaceId).filter(Boolean) as string[];
+
+    const { error: delError } = await supabase.from("agreement_spaces").delete().eq("agreement_id", id);
+    if (delError) throw new Error(delError.message);
+
+    const removedSpaceIds = prevSpaceIds.filter((spaceId) => !nextSpaceIds.includes(spaceId));
+    if (removedSpaceIds.length) {
+      await supabase.from("spaces").update({ occupancy_status: "vacant" }).in("id", removedSpaceIds);
     }
-    for (const line of patch.lineItems) {
-      const spaceId = line.spaceId ?? null;
-      const found = prev.find((p) => (p.space_id ?? null) === spaceId);
-      if (found) {
-        await supabase
-          .from("agreement_spaces")
-          .update({ monthly_rent_amount: line.monthlyRent })
-          .eq("id", found.id);
-      } else {
-        await supabase.from("agreement_spaces").insert({
-          agreement_id: id,
-          space_id: spaceId,
-          monthly_rent_amount: line.monthlyRent,
-          start_date: patch.startDate ?? new Date().toISOString().slice(0, 10),
-          end_date: patch.endDate ?? null,
-        });
-      }
-      if (spaceId) {
-        await supabase.from("spaces").update({ occupancy_status: "occupied" }).eq("id", spaceId);
-      }
+
+    const rows = patch.lineItems.map((line) => ({
+      agreement_id: id,
+      space_id: line.spaceId || null,
+      label: line.label || null,
+      monthly_rent_amount: line.monthlyRent,
+      start_date: patch.startDate ?? new Date().toISOString().slice(0, 10),
+      end_date: patch.endDate ?? null,
+    }));
+    const { error: insError } = await supabase.from("agreement_spaces").insert(rows);
+    if (insError) throw new Error(insError.message);
+
+    if (nextSpaceIds.length) {
+      await supabase.from("spaces").update({ occupancy_status: "occupied" }).in("id", nextSpaceIds);
     }
   }
   await refreshDatabase();

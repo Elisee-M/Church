@@ -276,6 +276,7 @@ create table if not exists public.agreement_spaces (
   agreement_id uuid not null references public.rental_agreements(id) on delete cascade,
   space_id uuid not null references public.spaces(id) on delete restrict,
   monthly_rent_amount numeric(14,2) not null check (monthly_rent_amount >= 0),
+  label text,
   start_date date not null,
   end_date date,
   created_at timestamptz not null default now(),
@@ -1548,7 +1549,7 @@ begin
 
     insert into public.invoice_items (invoice_id, space_id, description, quantity, unit_price, total)
     select v_invoice_id, ags.space_id,
-           case when sp.space_code is not null or sp.name is not null then 'Monthly rent - ' || coalesce(sp.space_code, '') || ' ' || coalesce(sp.name, '') else 'Monthly rent' end,
+           case when ags.label is not null and btrim(ags.label) <> '' then 'Monthly rent - ' || ags.label when sp.space_code is not null or sp.name is not null then 'Monthly rent - ' || coalesce(sp.space_code, '') || ' ' || coalesce(sp.name, '') else 'Monthly rent' end,
            1, ags.monthly_rent_amount, ags.monthly_rent_amount
     from public.agreement_spaces ags
     left join public.spaces sp on sp.id = ags.space_id
