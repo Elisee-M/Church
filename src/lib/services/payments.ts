@@ -90,6 +90,10 @@ export async function reversePayment(paymentId: string, reason: string) {
   await refreshDatabase();
 }
 
+export function randomSimulationOutcome(): "success" | "failed" {
+  return Math.random() > 0.2 ? "success" : "failed";
+}
+
 export async function simulateMobileMoneyPayment(input: {
   invoiceId: string;
   amount: number;

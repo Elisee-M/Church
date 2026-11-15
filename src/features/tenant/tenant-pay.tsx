@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 import { formatCurrency, formatDate, monthLabel } from "@/lib/utils";
 import { getTenantSummary, invoiceBalance } from "@/lib/mock-data/analytics";
-import { simulateMobileMoneyPayment, submitBankTransferProof } from "@/lib/services";
+import { randomSimulationOutcome, simulateMobileMoneyPayment, submitBankTransferProof } from "@/lib/services";
 import { buildDocumentPath, uploadDocument } from "@/lib/storage/documents";
 import {
   bankProofSchema,
@@ -95,6 +95,7 @@ export function TenantPay() {
       proofName: "",
     },
   });
+  const bankMethod = useWatch({ control: bankForm.control, name: "method" });
 
   if (!ready) {
     return (
@@ -137,14 +138,14 @@ export function TenantPay() {
     // Simulated mobile money confirmation flow. No real payment rail and never asks for a PIN.
     await new Promise((r) => setTimeout(r, 1800));
     try {
-      // eslint-disable-next-line react-hooks/purity -- simulated outcome in event handler
-      const succeeded = Math.random() > 0.2;
+      const outcome = randomSimulationOutcome();
+      const succeeded = outcome === "success";
       const ref = await simulateMobileMoneyPayment({
         invoiceId: invoice.id,
         amount: values.amount,
         method: values.method,
         phone: values.phone,
-        outcome: succeeded ? "success" : "failed",
+        outcome,
       });
       setMomoReference(ref);
       setLastMomoOutcome(succeeded ? "success" : "failed");
@@ -462,7 +463,7 @@ export function TenantPay() {
                       </Field>
                       <Field label="Payment method" htmlFor="bank-method" error={bankForm.formState.errors.method?.message}>
                         <Select
-                          value={bankForm.watch("method")}
+                          value={bankMethod}
                           onValueChange={(value) =>
                             bankForm.setValue("method", value as BankProofFormValues["method"], { shouldValidate: true })
                           }
@@ -480,7 +481,7 @@ export function TenantPay() {
                       </Field>
                     </div>
 
-                    {bankForm.watch("method") === "bank_transfer" && (
+                    {bankMethod === "bank_transfer" && (
                       <Field label="Bank name" htmlFor="bank-name" error={bankForm.formState.errors.bankName?.message}>
                         <Input id="bank-name" {...bankForm.register("bankName")} />
                       </Field>
