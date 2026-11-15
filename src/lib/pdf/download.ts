@@ -5,7 +5,10 @@ import { PAYMENT_METHOD_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 
 async function getJsPdf() {
-  const mod = await import("jspdf");
+  // Import the browser build explicitly. The package's `node` export condition
+  // resolves to dist/jspdf.node.min.js, which pulls in canvg/core-js and breaks
+  // Turbopack's client-component SSR bundling.
+  const mod = (await import("jspdf/dist/jspdf.es.min.js")) as unknown as typeof import("jspdf");
   return mod.jsPDF;
 }
 
@@ -76,7 +79,7 @@ export async function downloadReceiptPdf(payment: Payment, db: Database) {
     ],
   ];
   if (payment.phone) rows.push(["Mobile number", payment.phone]);
-  if ((payment as any).bankName) rows.push(["Bank", (payment as any).bankName]);
+  if (payment.bankName) rows.push(["Bank", payment.bankName]);
 
   const colW = (pageW - margin * 2 - 20) / 2;
   doc.setFontSize(9);
