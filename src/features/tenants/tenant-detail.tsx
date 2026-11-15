@@ -166,9 +166,13 @@ export function TenantDetail({ tenantId }: { tenantId: string }) {
                         : Array.from({ length: tenant.roomsNeeded ?? 1 }, (_, index) => ({
                             floorId: tenant.floorId,
                             roomNumber: (tenant.roomNumbers?.length ? tenant.roomNumbers : tenant.roomNumber ? [tenant.roomNumber] : [])[index],
+                            monthlyRent: undefined as number | undefined,
                           }))).map((room, index) => (
                         <p key={index}>
-                          {db.floors.find((floor) => floor.id === room.floorId)?.name ?? "Floor"} �� Room {room.roomNumber || index + 1}
+                          {db.floors.find((floor) => floor.id === room.floorId)?.name ?? "Floor"} · Room {room.roomNumber || index + 1}
+                          {typeof room.monthlyRent === "number" && room.monthlyRent > 0
+                            ? ` · ${formatCurrency(room.monthlyRent, true)}`
+                            : ""}
                         </p>
                       ))}
                     </div>

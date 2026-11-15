@@ -109,9 +109,10 @@ export function getTenantSummary(db: Database, tenantId: string) {
       : Array.from({ length: tenant.roomsNeeded ?? 1 }, (_, index) => ({
           floorId: tenant.floorId,
           roomNumber: (tenant.roomNumbers?.length ? tenant.roomNumbers : tenant.roomNumber ? [tenant.roomNumber] : [])[index],
+          monthlyRent: undefined as number | undefined,
         }));
     const roomCount = Math.max(rooms.length, 1);
-    const rentPerRoom = (tenant.monthlyRent ?? 0) / roomCount;
+    const fallbackRent = (tenant.monthlyRent ?? 0) / roomCount;
     rooms.forEach((room, index) => {
       spaces.push({
         id: `${tenant.id}-room-${index + 1}`,
@@ -122,7 +123,7 @@ export function getTenantSummary(db: Database, tenantId: string) {
         category: "commercial",
         status: "occupied",
         sizeSqm: 0,
-        monthlyRent: rentPerRoom,
+        monthlyRent: room.monthlyRent ?? fallbackRent,
         tenantId: tenant.id,
         description: "",
         features: [],

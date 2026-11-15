@@ -192,7 +192,7 @@ export async function fetchDatabaseFromSupabase(): Promise<Database> {
   const spacesByAgreement = new Map<string, AgreementLine[]>();
   for (const ags of agreementSpaces) {
     const list = spacesByAgreement.get(ags.agreement_id) ?? [];
-    list.push({ spaceId: ags.space_id, monthlyRent: Number(ags.monthly_rent_amount ?? 0) });
+    list.push({ spaceId: ags.space_id ?? undefined, label: ags.label ?? undefined, monthlyRent: Number(ags.monthly_rent_amount ?? 0) });
     spacesByAgreement.set(ags.agreement_id, list);
   }
   const spaceTenant = new Map<string, string>();

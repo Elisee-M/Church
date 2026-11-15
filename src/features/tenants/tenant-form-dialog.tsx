@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import type { Tenant } from "@/types";
 import { createTenant, createTenantWithAccount, updateTenant } from "@/lib/services";
 import { tenantSchema, type TenantFormValues } from "@/lib/validations/schemas";
+import { formatCurrency } from "@/lib/utils";
 import { useDatabase } from "@/hooks/use-database";
 import { Field } from "@/components/shared/form-field";
 import {
@@ -31,6 +32,19 @@ import {
 
 export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose: () => void }) {
   const db = useDatabase();
+  const initialRoomsNeeded = Math.max(tenant?.roomsNeeded ?? tenant?.rooms?.length ?? 1, 1);
+  const initialRoomRentFallback = (tenant?.monthlyRent ?? 0) / initialRoomsNeeded;
+  const initialRooms = tenant?.rooms?.length
+    ? tenant.rooms.map((room) => ({
+        floorId: room.floorId ?? "",
+        roomNumber: room.roomNumber ?? "",
+        monthlyRent: room.monthlyRent ?? initialRoomRentFallback,
+      }))
+    : Array.from({ length: initialRoomsNeeded }, (_, index) => ({
+        floorId: tenant?.floorId ?? "",
+        roomNumber: tenant?.roomNumbers?.[index] ?? tenant?.roomNumber ?? "",
+        monthlyRent: initialRoomRentFallback,
+      }));
   const form = useForm<TenantFormValues>({
     resolver: zodResolver(tenantSchema),
     defaultValues: {
@@ -49,15 +63,10 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
       roomNumber: tenant?.roomNumber ?? "",
       roomNumbers:
         tenant?.roomNumbers ??
-        (tenant?.roomNumber ? [tenant.roomNumber] : Array.from({ length: tenant?.roomsNeeded ?? 1 }, () => "")),
-      rooms:
-        tenant?.rooms ??
-        Array.from({ length: tenant?.roomsNeeded ?? 1 }, (_, index) => ({
-          floorId: tenant?.floorId ?? "",
-          roomNumber: tenant?.roomNumbers?.[index] ?? tenant?.roomNumber ?? "",
-        })),
+        (tenant?.roomNumber ? [tenant.roomNumber] : Array.from({ length: initialRoomsNeeded }, () => "")),
+      rooms: initialRooms,
       monthlyRent: tenant?.monthlyRent ?? 0,
-      roomsNeeded: tenant?.roomsNeeded ?? 1,
+      roomsNeeded: initialRoomsNeeded,
       createLoginAccount: false,
       loginPassword: "",
       notes: tenant?.notes ?? "",
@@ -65,12 +74,29 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
   });
   const type = useWatch({ control: form.control, name: "type" });
   const roomsNeeded = form.watch("roomsNeeded");
+  const watchedRooms = form.watch("rooms");
   React.useEffect(() => {
-    const current = form.getValues("roomNumbers") ?? [];
     const count = Math.max(roomsNeeded ?? 1, 1);
-    const next = Array.from({ length: count }, (_, index) => current[index] ?? "");
-    form.setValue("roomNumbers", next, { shouldDirty: false });
+    const currentNumbers = form.getValues("roomNumbers") ?? [];
+    const currentRooms = form.getValues("rooms") ?? [];
+    const nextRooms = Array.from({ length: count }, (_, index) =>
+      currentRooms[index] ?? {
+        floorId: form.getValues("floorId") ?? "",
+        roomNumber: currentNumbers[index] ?? "",
+        monthlyRent: 0,
+      },
+    );
+    form.setValue("roomNumbers", nextRooms.map((room) => room.roomNumber ?? ""), { shouldDirty: false });
+    form.setValue("rooms", nextRooms, { shouldDirty: false });
   }, [roomsNeeded, form]);
+
+  React.useEffect(() => {
+    const total = (form.getValues("rooms") ?? []).reduce(
+      (sum, room) => sum + (Number(room?.monthlyRent) || 0),
+      0,
+    );
+    form.setValue("monthlyRent", total, { shouldDirty: false });
+  }, [watchedRooms, form]);
   const createLoginAccount = useWatch({ control: form.control, name: "createLoginAccount" });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -94,7 +120,10 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
             buildingId: values.buildingId,
             floorId: values.floorId,
             roomNumber: values.roomNumber,
+            roomNumbers: values.roomNumbers,
+            rooms: values.rooms,
             monthlyRent: values.monthlyRent,
+            roomsNeeded: values.roomsNeeded,
             notes: values.notes,
             loginPassword: values.loginPassword || "",
           });
@@ -222,7 +251,7 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
            </div>
 
            {Array.from({ length: Math.max(form.watch("roomsNeeded") ?? 1, 1) }).map((_, index) => (
-             <div key={index} className="grid gap-4 sm:grid-cols-2 rounded-lg border border-border p-3">
+             <div key={index} className="grid gap-4 rounded-lg border border-border p-3 sm:grid-cols-3">
                <Field label={`Room ${index + 1} floor`} htmlFor={`tenant-room-floor-${index}`} optional>
                  <Select
                    value={form.watch(`rooms.${index}.floorId`) || ""}
@@ -250,39 +279,35 @@ export function TenantFormDialog({ tenant, onClose }: { tenant?: Tenant; onClose
                    {...form.register(`rooms.${index}.roomNumber`)}
                  />
                </Field>
+               <Field
+                 label={`Room ${index + 1} rent (RWF)`}
+                 htmlFor={`tenant-room-rent-${index}`}
+                 optional
+                 error={form.formState.errors.rooms?.[index]?.monthlyRent?.message}
+               >
+                 <Input
+                   id={`tenant-room-rent-${index}`}
+                   type="number"
+                   min={0}
+                   step={1000}
+                   placeholder="0"
+                   {...form.register(`rooms.${index}.monthlyRent`, {
+                     setValueAs: (value) =>
+                       value === "" || value === null || value === undefined ? 0 : Number(value),
+                   })}
+                 />
+               </Field>
              </div>
            ))}
 
-          <Field
-
-            label="Monthly rent (RWF)"
-            htmlFor="tenant-rent"
-            error={form.formState.errors.monthlyRent?.message}
-            hint="Default monthly rent for this tenant's agreement/invoices"
-          >
-            <Input
-              id="tenant-rent"
-              type="number"
-              min={0}
-              step={1000}
-              {...form.register("monthlyRent", { valueAsNumber: true })}
-            />
-          </Field>
-
-          <Field
-            label="Rooms needed"
-            htmlFor="tenant-rooms"
-            error={form.formState.errors.roomsNeeded?.message}
-            hint="Number of rooms/units this tenant rents"
-          >
-            <Input
-              id="tenant-rooms"
-              type="number"
-              min={1}
-              step={1}
-              {...form.register("roomsNeeded", { valueAsNumber: true })}
-            />
-          </Field>
+           <div className="flex items-center justify-between rounded-lg bg-accent/70 px-3 py-2.5 text-[11.5px] dark:bg-white/[0.04]">
+             <span className="font-medium">Total monthly rent</span>
+             <span className="font-display text-base font-semibold">
+               {formatCurrency(
+                 (watchedRooms ?? []).reduce((sum, room) => sum + (Number(room?.monthlyRent) || 0), 0),
+               )}
+             </span>
+           </div>
 
           {!tenant && (
             <div className="space-y-3 rounded-lg border border-border p-3">

@@ -4,6 +4,15 @@ import { createClient } from "@/lib/supabase/client";
 import { refreshDatabase } from "./store";
 import { createTenantWithAccountAction } from "@/lib/actions/admin-tenants";
 
+type TenantRoomInput = { floorId?: string; roomNumber?: string; monthlyRent?: number };
+
+function roomsMonthlyTotal(rooms?: TenantRoomInput[]) {
+  if (!rooms?.length) return undefined;
+  const hasPerRoom = rooms.some((room) => typeof room.monthlyRent === "number" && room.monthlyRent > 0);
+  if (!hasPerRoom) return undefined;
+  return rooms.reduce((sum, room) => sum + (room.monthlyRent ?? 0), 0);
+}
+
 export async function createTenant(input: {
   type: "individual" | "company";
   name: string;
@@ -19,7 +28,7 @@ export async function createTenant(input: {
   floorId?: string;
   roomNumber?: string;
   roomNumbers?: string[];
-  rooms?: { floorId?: string; roomNumber?: string }[];
+  rooms?: TenantRoomInput[];
   monthlyRent?: number;
   roomsNeeded?: number;
   notes?: string;
@@ -41,7 +50,7 @@ export async function createTenant(input: {
     floor_id: input.floorId || null,
     room_number: (input.rooms?.map((room) => room.roomNumber).filter(Boolean) as string[] ?? input.roomNumbers ?? (input.roomNumber ? [input.roomNumber] : [])).filter(Boolean).join(", ") || null,
     rooms: input.rooms ?? null,
-    monthly_rent: input.monthlyRent ?? null,
+    monthly_rent: roomsMonthlyTotal(input.rooms) ?? input.monthlyRent ?? null,
     rooms_needed: input.roomsNeeded ?? null,
     emergency_contact_phone: input.altPhone || null,
   });
@@ -66,7 +75,7 @@ export async function updateTenant(
     floorId?: string;
     roomNumber?: string;
     roomNumbers?: string[];
-    rooms?: { floorId?: string; roomNumber?: string }[];
+    rooms?: TenantRoomInput[];
     monthlyRent?: number;
     roomsNeeded?: number;
     notes?: string;
@@ -95,7 +104,11 @@ export async function updateTenant(
   }
   if (input.altPhone !== undefined) patch.emergency_contact_phone = input.altPhone;
   if (input.contactName !== undefined) patch.company_name = input.contactName;
-  if (input.monthlyRent !== undefined) patch.monthly_rent = input.monthlyRent ?? null;
+  if (input.rooms !== undefined) {
+    const total = roomsMonthlyTotal(input.rooms);
+    if (total !== undefined) patch.monthly_rent = total;
+    else if (input.monthlyRent !== undefined) patch.monthly_rent = input.monthlyRent ?? null;
+  } else if (input.monthlyRent !== undefined) patch.monthly_rent = input.monthlyRent ?? null;
   if (input.roomsNeeded !== undefined) patch.rooms_needed = input.roomsNeeded ?? null;
   const { error } = await supabase.from("tenants").update(patch).eq("id", id);
   if (error) throw new Error(error.message);
@@ -116,7 +129,10 @@ export async function createTenantWithAccount(input: {
   buildingId?: string;
   floorId?: string;
   roomNumber?: string;
+  roomNumbers?: string[];
+  rooms?: TenantRoomInput[];
   monthlyRent?: number;
+  roomsNeeded?: number;
   notes?: string;
   loginPassword: string;
 }) {

@@ -17,7 +17,7 @@ export const tenantSchema = z.object({
   floorId: z.string().optional(),
   roomNumber: z.string().optional(),
   roomNumbers: z.array(z.string()).optional(),
-  rooms: z.array(z.object({ floorId: z.string().optional(), roomNumber: z.string().optional() })).optional(),
+  rooms: z.array(z.object({ floorId: z.string().optional(), roomNumber: z.string().optional(), monthlyRent: z.number().min(0).optional() })).optional(),
   monthlyRent: z.number().min(0, "Monthly rent cannot be negative.").optional(),
   roomsNeeded: z.number().min(1, "Enter at least one room.").optional(),
   createLoginAccount: z.boolean().optional(),
@@ -64,6 +64,7 @@ export type BuildingFormValues = z.infer<typeof buildingSchema>;
 
 const agreementLineSchema = z.object({
   spaceId: z.string().optional(),
+  label: z.string().optional(),
   monthlyRent: z.number().min(1, "Rent must be greater than zero."),
 });
 

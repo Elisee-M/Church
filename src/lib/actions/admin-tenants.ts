@@ -19,8 +19,9 @@ export type CreateTenantWithAccountInput = {
   floorId?: string;
   roomNumber?: string;
   roomNumbers?: string[];
-  rooms?: { floorId?: string; roomNumber?: string }[];
+  rooms?: { floorId?: string; roomNumber?: string; monthlyRent?: number }[];
   monthlyRent?: number;
+  roomsNeeded?: number;
   notes?: string;
   loginPassword: string;
 };
@@ -77,6 +78,9 @@ export async function createTenantWithAccountAction(input: CreateTenantWithAccou
     if (roleError) throw new Error(roleError.message);
 
     // 4) Create tenant record linked to auth user
+    const roomRentTotal = input.rooms?.length && input.rooms.some((room) => (room.monthlyRent ?? 0) > 0)
+      ? input.rooms.reduce((sum, room) => sum + (room.monthlyRent ?? 0), 0)
+      : undefined;
     const { error: tenantError } = await admin.from("tenants").insert({
       organization_id: orgId,
       tenant_type: input.type,
@@ -91,7 +95,8 @@ export async function createTenantWithAccountAction(input: CreateTenantWithAccou
       floor_id: input.floorId || null,
       room_number: (input.rooms?.map((room) => room.roomNumber).filter(Boolean) as string[] ?? input.roomNumbers ?? (input.roomNumber ? [input.roomNumber] : [])).filter(Boolean).join(", ") || null,
       rooms: input.rooms ?? null,
-      monthly_rent: input.monthlyRent ?? null,
+      monthly_rent: roomRentTotal ?? input.monthlyRent ?? null,
+      rooms_needed: input.roomsNeeded ?? null,
       emergency_contact_phone: input.altPhone || null,
       linked_user_id: userId,
     });

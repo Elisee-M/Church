@@ -63,7 +63,7 @@ export type Tenant = {
   floorId?: string;
   roomNumber?: string;
   roomNumbers?: string[];
-  rooms?: { floorId?: string; roomNumber?: string }[];
+  rooms?: { floorId?: string; roomNumber?: string; monthlyRent?: number }[];
   monthlyRent?: number;
   roomsNeeded?: number;
   linkedUserId?: string;
@@ -76,6 +76,7 @@ export type AgreementStatus = "active" | "expiring" | "expired" | "draft" | "ter
 
 export type AgreementLine = {
   spaceId?: string;
+  label?: string;
   monthlyRent: number;
 };
 
