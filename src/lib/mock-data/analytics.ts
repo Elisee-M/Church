@@ -1,4 +1,4 @@
-import type { Database, Invoice, InvoiceStatus, Payment, Space } from "@/types";
+import type { Database, Invoice, InvoiceStatus, Payment } from "@/types";
 
 export const HISTORY_MONTHS: string[] = [];
 

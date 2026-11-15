@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Agreement } from "@/types";
-import { AGREEMENT_STATUS_LABELS, SPACE_CATEGORY_LABELS } from "@/lib/constants";
+import { AGREEMENT_STATUS_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate, initials } from "@/lib/utils";
 import { renewAgreement, terminateAgreement } from "@/lib/services";
 import { useDatabase, usePageReady } from "@/hooks/use-database";

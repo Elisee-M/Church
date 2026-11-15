@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import type { Agreement, AgreementLine, Tenant } from "@/types";
-import { SPACE_CATEGORY_LABELS } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { createAgreement, updateAgreement } from "@/lib/services";
 import { agreementSchema, type AgreementFormValues } from "@/lib/validations/schemas";
@@ -22,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -84,7 +82,8 @@ export function AgreementFormDialog({
     },
   });
   const { fields, replace } = useFieldArray({ control: form.control, name: "lineItems" });
-  const lineItems = useWatch({ control: form.control, name: "lineItems" }) ?? [];
+  const watchedLineItems = useWatch({ control: form.control, name: "lineItems" });
+  const lineItems = React.useMemo(() => watchedLineItems ?? [], [watchedLineItems]);
   const tenantId = useWatch({ control: form.control, name: "tenantId" });
   const penaltyEnabled = useWatch({ control: form.control, name: "penaltyEnabled" });
   const startDate = useWatch({ control: form.control, name: "startDate" });
