@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { LoginForm } from "@/features/auth/login-form";
+import { LoadingPanel } from "@/components/shared/states";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -7,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function LoginPage() {
-  return <LoginForm />;
+  return (
+    <Suspense fallback={<LoadingPanel />}>
+      <LoginForm />
+    </Suspense>
+  );
 }
