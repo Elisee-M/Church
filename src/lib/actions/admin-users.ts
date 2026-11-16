@@ -210,6 +210,17 @@ export async function deleteUserAction(userId: string) {
   return { deleted: true };
 }
 
+export async function setUserPasswordAction(userId: string, password: string) {
+  await requireAdminAndOrg();
+  if (!userId) throw new Error("User is required.");
+  if (!password || password.length < 8) throw new Error("Password must be at least 8 characters.");
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(userId, { password });
+  if (error) throw new Error(error.message);
+  return { updated: true };
+}
+
 function roleLabel(rs: string[] = [], managedRole?: string | null): SystemUserRole {
   const allowed: SystemUserRole[] = ["Administrator", "Accountant", "Property Manager", "Tenant", "Viewer"];
   if (managedRole && allowed.includes(managedRole as SystemUserRole)) return managedRole as SystemUserRole;

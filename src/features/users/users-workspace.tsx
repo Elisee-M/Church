@@ -29,6 +29,7 @@ import { LoadingPanel } from "@/components/shared/states";
 import { DataTable, type DataTableColumn } from "@/components/tables/data-table";
 import { InviteUserDialog } from "./invite-user-dialog";
 import { EditUserDialog } from "./edit-user-dialog";
+import { SetUserPasswordDialog } from "./set-user-password-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -88,6 +89,7 @@ export function UsersWorkspace() {
   const [inviteOpen, setInviteOpen] = React.useState(false);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [editingUser, setEditingUser] = React.useState<SystemUser | null>(null);
+  const [passwordUser, setPasswordUser] = React.useState<SystemUser | null>(null);
   const [deletingUser, setDeletingUser] = React.useState<SystemUser | null>(null);
   const [deleting, setDeleting] = React.useState(false);
   const [users, setUsers] = React.useState<SystemUser[]>([]);
@@ -224,6 +226,9 @@ export function UsersWorkspace() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setEditingUser(user)}>
                 <Pencil /> Edit user
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setPasswordUser(user)}>
+                <ShieldCheck /> Set password
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
@@ -391,6 +396,7 @@ export function UsersWorkspace() {
 
       {inviteOpen && <InviteUserDialog onClose={() => setInviteOpen(false)} />}
       {editingUser && <EditUserDialog user={editingUser} onClose={() => setEditingUser(null)} />}
+      {passwordUser && <SetUserPasswordDialog user={passwordUser} onClose={() => setPasswordUser(null)} />}
 
       <AlertDialog open={!!deletingUser} onOpenChange={(open) => !open && !deleting && setDeletingUser(null)}>
         <AlertDialogContent>
@@ -512,6 +518,14 @@ export function UsersWorkspace() {
                   onClick={() => setEditingUser(selected)}
                 >
                   <Pencil className="size-3.5" /> Edit user
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => setPasswordUser(selected)}
+                >
+                  <ShieldCheck className="size-3.5" /> Set password
                 </Button>
                 {selected.status === "active" ? (
                   <Button

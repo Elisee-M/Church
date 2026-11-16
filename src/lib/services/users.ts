@@ -6,6 +6,7 @@ import {
   createUserAction,
   deleteUserAction,
   inviteUserAction,
+  setUserPasswordAction,
   updateManagedUserAction,
 } from "@/lib/actions/admin-users";
 
@@ -44,4 +45,8 @@ export async function updateUser(id: string, patch: UpdateManagedUserInput) {
 export async function deleteUser(id: string) {
   await deleteUserAction(id);
   await refreshDatabase();
+}
+
+export async function setUserPassword(id: string, password: string) {
+  await setUserPasswordAction(id, password);
 }
