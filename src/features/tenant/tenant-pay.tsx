@@ -55,13 +55,12 @@ export function TenantPay() {
   const searchParams = useSearchParams();
   const requestedInvoice = searchParams.get("invoice");
   const tenantId = useCurrentTenantId();
-  const summary = getTenantSummary(db, tenantId);
-  const openInvoices = summary.invoices.filter((invoice) => invoiceBalance(invoice) > 0);
-  const defaultInvoiceId =
-    openInvoices.find((invoice) => invoice.id === requestedInvoice)?.id ??
-    openInvoices[0]?.id ??
-    "";
-  const [invoiceId, setInvoiceId] = React.useState(defaultInvoiceId);
+  const summary = React.useMemo(() => getTenantSummary(db, tenantId), [db, tenantId]);
+  const openInvoices = React.useMemo(
+    () => summary.invoices.filter((item) => invoiceBalance(item) > 0),
+    [summary.invoices],
+  );
+  const [invoiceId, setInvoiceId] = React.useState("");
   const [method, setMethod] = React.useState<"mtn_momo" | "airtel_money" | "bank_transfer">(
     "bank_transfer",
   );
@@ -71,15 +70,24 @@ export function TenantPay() {
   const [bankSubmitted, setBankSubmitted] = React.useState(false);
   const [proofFile, setProofFile] = React.useState<File | null>(null);
 
-  const invoice = summary.invoices.find((item) => item.id === invoiceId) ?? openInvoices[0];
+  React.useEffect(() => {
+    if (openInvoices.length === 0) return;
+    setInvoiceId((current) => {
+      if (current && openInvoices.some((item) => item.id === current)) return current;
+      if (requestedInvoice && openInvoices.some((item) => item.id === requestedInvoice)) return requestedInvoice;
+      return openInvoices[0].id;
+    });
+  }, [openInvoices, requestedInvoice]);
+
+  const invoice = openInvoices.find((item) => item.id === invoiceId) ?? openInvoices[0];
   const balance = invoice ? invoiceBalance(invoice) : 0;
 
   const momoForm = useForm<MomoPaymentFormValues>({
     resolver: zodResolver(momoPaymentSchema),
-    values: {
-      amount: balance,
-      method: method === "airtel_money" ? "airtel_money" : "mtn_momo",
-      phone: summary.tenant?.phone ?? "",
+    defaultValues: {
+      amount: 0,
+      method: "mtn_momo",
+      phone: "",
     },
   });
   const momoMethod = useWatch({ control: momoForm.control, name: "method" });
@@ -87,15 +95,36 @@ export function TenantPay() {
 
   const bankForm = useForm<BankProofFormValues>({
     resolver: zodResolver(bankProofSchema),
-    values: {
+    defaultValues: {
       method: "bank_transfer",
-      bankName: db.settings.payments.bankName,
+      bankName: "",
       reference: "",
-      amount: balance,
+      amount: 0,
       proofName: "",
     },
   });
   const bankMethod = useWatch({ control: bankForm.control, name: "method" });
+
+  React.useEffect(() => {
+    if (!invoice) return;
+    momoForm.reset({
+      amount: balance,
+      method: method === "airtel_money" ? "airtel_money" : "mtn_momo",
+      phone: summary.tenant?.phone ?? "",
+    });
+  }, [invoice?.id, balance, method, summary.tenant?.phone, momoForm]);
+
+  React.useEffect(() => {
+    if (!invoice) return;
+    bankForm.reset({
+      method: "bank_transfer",
+      bankName: db.settings.payments.bankName ?? "",
+      reference: "",
+      amount: balance,
+      proofName: "",
+    });
+    setProofFile(null);
+  }, [invoice?.id, balance, db.settings.payments.bankName, bankForm]);
 
   if (!ready) {
     return (
