@@ -173,8 +173,13 @@ export const bankProofSchema = z.object({
   reference: z.string().optional(),
   amount: z.number().min(1, "Enter the amount."),
   proofName: z.string().optional(),
+  cashReceivedBy: z.string().optional(),
 }).superRefine((val, ctx) => {
-  if (val.method !== "cash") {
+  if (val.method === "cash") {
+    if (!val.cashReceivedBy || val.cashReceivedBy.trim().length < 2) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["cashReceivedBy"], message: "Enter the name of the person who received the cash." });
+    }
+  } else {
     if (!val.reference || val.reference.trim().length < 4) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["reference"], message: "Enter the payment reference." });
     }

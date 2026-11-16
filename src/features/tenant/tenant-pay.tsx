@@ -101,6 +101,7 @@ export function TenantPay() {
       reference: "",
       amount: 0,
       proofName: "",
+      cashReceivedBy: "",
     },
   });
   const bankMethod = useWatch({ control: bankForm.control, name: "method" });
@@ -122,6 +123,7 @@ export function TenantPay() {
       reference: "",
       amount: balance,
       proofName: "",
+      cashReceivedBy: "",
     });
     setProofFile(null);
   }, [invoice?.id, balance, db.settings.payments.bankName, bankForm]);
@@ -214,6 +216,7 @@ export function TenantPay() {
         reference: values.method === "cash" ? "" : (values.reference ?? ""),
         proofName: values.method === "cash" ? undefined : (proofFile?.name || values.proofName || undefined),
         proofPath,
+        cashReceivedBy: values.method === "cash" ? values.cashReceivedBy : undefined,
       });
       setBankSubmitted(true);
       toast.success(values.method === "cash" ? "Cash payment submitted" : "Proof submitted", {
@@ -447,7 +450,7 @@ export function TenantPay() {
           ) : (
             <SectionCard
               title="3. Submit bank transfer proof"
-              description={bankMethod === "cash" ? "Submit your cash payment amount. No proof or extra details required." : "Transfers and payments are reviewed by the finance team before they count as paid."}
+              description={bankMethod === "cash" ? "Submit your cash payment amount and who received it. No proof or other details required." : "Transfers and payments are reviewed by the finance team before they count as paid."}
               action={<Badge variant="warning">Verification required</Badge>}
             >
               <div className="px-5 pb-5">
@@ -503,6 +506,8 @@ export function TenantPay() {
                               bankForm.setValue("reference", "");
                               bankForm.setValue("proofName", "");
                               bankForm.setValue("bankName", "");
+                            } else {
+                              bankForm.setValue("cashReceivedBy", "");
                             }
                           }}
                         >
@@ -522,6 +527,12 @@ export function TenantPay() {
                     {bankMethod === "bank_transfer" && (
                       <Field label="Bank name" htmlFor="bank-name" error={bankForm.formState.errors.bankName?.message}>
                         <Input id="bank-name" {...bankForm.register("bankName")} />
+                      </Field>
+                    )}
+
+                    {bankMethod === "cash" && (
+                      <Field label="Received by" htmlFor="cash-received-by" error={bankForm.formState.errors.cashReceivedBy?.message} hint="Enter the name of the person you gave the cash to.">
+                        <Input id="cash-received-by" placeholder="e.g. John Doe" {...bankForm.register("cashReceivedBy")} />
                       </Field>
                     )}
 

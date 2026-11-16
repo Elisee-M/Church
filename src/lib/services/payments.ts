@@ -140,6 +140,7 @@ export async function submitBankTransferProof(input: {
   reference?: string;
   proofName?: string;
   proofPath?: string;
+  cashReceivedBy?: string;
 }) {
   const supabase = createClient();
   const { data: inv, error: invErr } = await supabase
@@ -170,6 +171,7 @@ export async function submitBankTransferProof(input: {
     payment_date: new Date().toISOString(),
     notes: [
       method === "cash" ? "Cash payment submitted. Awaiting verification." : `${method === "bank_transfer" ? "Bank transfer" : method === "mtn_momo" ? "MTN MoMo" : "Airtel Money"} payment submitted. Awaiting verification.`,
+      method === "cash" && input.cashReceivedBy?.trim() ? `Received by: ${input.cashReceivedBy.trim()}` : null,
       input.proofPath ? `Proof path: ${input.proofPath}` : input.proofName ? `Proof: ${input.proofName}` : null,
     ].filter(Boolean).join(" "),
   });
