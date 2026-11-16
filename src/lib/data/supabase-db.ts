@@ -315,16 +315,16 @@ export async function fetchDatabaseFromSupabase(): Promise<Database> {
     if (m === "cash") return "cash";
     return "bank_transfer";
   }
-  function mapPaymentStatus(s: string): any {
+  function mapPaymentStatus(s: string): "completed" | "pending" | "failed" | "reversed" {
     if (s === "successful") return "completed";
     if (s === "under_review") return "pending";
-    if (s === "cancelled") return "failed";
-    return s;
+    if (s === "failed" || s === "cancelled") return "failed";
+    return "pending";
   }
-  function mapVerification(p: any): any {
-    if (p.verified_at || p.payment_status === "successful") return "verified";
+  function mapVerification(p: any): "verified" | "pending" | "rejected" | "not_required" {
+    if (p.payment_status === "failed" || p.payment_status === "cancelled") return "rejected";
+    if (p.payment_status === "successful") return "verified";
     if (p.payment_status === "pending" || p.payment_status === "under_review") return "pending";
-    if (p.payment_status === "failed") return "rejected";
     return "not_required";
   }
 

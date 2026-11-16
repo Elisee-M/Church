@@ -55,8 +55,8 @@ export function AccountantDashboard() {
     .filter(
       (payment) =>
         payment.date.startsWith(month) &&
-        (payment.verification === "verified" || payment.verification === "not_required") &&
-        payment.status === "completed",
+        payment.status === "completed" &&
+        (payment.verification === "verified" || payment.verification === "not_required"),
     )
     .reduce((sum, payment) => sum + payment.amount, 0);
   const awaitingAmount = pending.reduce((sum, payment) => sum + payment.amount, 0);

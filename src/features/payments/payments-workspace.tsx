@@ -18,6 +18,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import type { Payment } from "@/types";
 import {
@@ -92,8 +93,20 @@ export function PaymentsWorkspace({
   const collected = confirmed.reduce((sum, payment) => sum + payment.amount, 0);
   const pending = rows.filter((payment) => payment.verification === "pending");
   const pendingAmount = pending.reduce((sum, payment) => sum + payment.amount, 0);
-  const failed = rows.filter((payment) => payment.status === "failed");
+  const rejectedTransfers = rows.filter(
+    (payment) => payment.status === "failed" && payment.verification === "rejected",
+  );
+  const failedOther = rows.filter(
+    (payment) => payment.status === "failed" && payment.verification !== "rejected",
+  );
+  const failed = [...rejectedTransfers, ...failedOther];
   const reversals = rows.filter((payment) => payment.amount < 0);
+  const statusChartData = [
+    { name: "Verified", value: confirmed.length, amount: collected, color: "var(--color-success, #16a34a)" },
+    { name: "Pending", value: pending.length, amount: pendingAmount, color: "var(--color-warning, #d97706)" },
+    { name: "Rejected", value: rejectedTransfers.length, amount: rejectedTransfers.reduce((s, p) => s + p.amount, 0), color: "var(--color-destructive, #dc2626)" },
+    { name: "Failed", value: failedOther.length, amount: failedOther.reduce((s, p) => s + p.amount, 0), color: "#94a3b8" },
+  ].filter((item) => item.value > 0 || item.name === "Verified" || item.name === "Pending" || item.name === "Rejected");
 
   const columns: DataTableColumn<Payment>[] = [
     {
@@ -266,9 +279,9 @@ export function PaymentsWorkspace({
           tone="warning"
         />
         <StatCard
-          label="Failed payments"
-          value={failed.length}
-          hint="No invoice balance was changed"
+          label="Rejected transfers"
+          value={rejectedTransfers.length}
+          hint={`${formatCurrency(rejectedTransfers.reduce((sum, payment) => sum + payment.amount, 0), true)} not collected`}
           icon={X}
           tone="danger"
         />
@@ -281,13 +294,47 @@ export function PaymentsWorkspace({
         />
       </div>
 
-      <div className="mt-5">
-        <div className="mb-2.5">
-          <h2 className="text-[13px] font-semibold">Payment ledger</h2>
-          <p className="text-[10.5px] text-muted-foreground">
-            Track every transaction, verify pending transfers, and open receipts or related invoices.
-          </p>
+      <div className="mt-5 grid gap-4 xl:grid-cols-12">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-soft xl:col-span-4">
+          <h2 className="text-[13px] font-semibold">Payment status overview</h2>
+          <p className="mt-0.5 text-[10.5px] text-muted-foreground">Counts by outcome. Rejected transfers are excluded from verified collections.</p>
+          <div className="mt-3 h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={statusChartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={28} />
+                <Tooltip
+                  formatter={(value, _name, item) => {
+                    const payload = item?.payload as { amount?: number } | undefined;
+                    return [`${value} payment(s) · ${formatCurrency(payload?.amount ?? 0, true)}`, ""];
+                  }}
+                  contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 11 }}
+                />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {statusChartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-2 space-y-1.5 text-[10.5px] text-muted-foreground">
+            {statusChartData.map((item) => (
+              <div key={item.name} className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5"><span className="size-2 rounded-full" style={{ backgroundColor: item.color }} />{item.name}</span>
+                <span className="font-medium text-foreground">{item.value} · {formatCurrency(item.amount, true)}</span>
+              </div>
+            ))}
+          </div>
         </div>
+        <div className="xl:col-span-8">
+          <div className="mb-2.5">
+            <h2 className="text-[13px] font-semibold">Payment ledger</h2>
+            <p className="text-[10.5px] text-muted-foreground">
+              Track every transaction, verify pending transfers, and open receipts or related invoices.
+            </p>
+          </div>
         <DataTable
           data={filtered}
           columns={columns}
@@ -364,6 +411,7 @@ export function PaymentsWorkspace({
             </>
           }
         />
+      </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[10.5px] text-muted-foreground">

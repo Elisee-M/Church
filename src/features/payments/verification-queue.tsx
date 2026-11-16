@@ -15,6 +15,7 @@ import {
   Smartphone,
   X,
 } from "lucide-react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { toast } from "sonner";
 import type { Payment } from "@/types";
 import { PAYMENT_METHOD_SHORT, VERIFICATION_LABELS } from "@/lib/constants";
@@ -58,11 +59,18 @@ export function VerificationQueue() {
   );
   const month = currentMonthKey();
   const verifiedThisMonth = db.payments.filter(
-    (payment) => payment.verification === "verified" && payment.date.startsWith(month),
+    (payment) =>
+      payment.verification === "verified" &&
+      payment.status === "completed" &&
+      payment.date.startsWith(month),
   );
-  const rejected = db.payments.filter((payment) => payment.verification === "rejected");
+  const rejectedTransfers = db.payments.filter(
+    (payment) => payment.status === "failed" && payment.verification === "rejected",
+  );
+  const rejected = rejectedTransfers;
   const awaiting = pending.reduce((sum, payment) => sum + payment.amount, 0);
   const verifiedAmount = verifiedThisMonth.reduce((sum, payment) => sum + payment.amount, 0);
+  const rejectedAmount = rejectedTransfers.reduce((sum, payment) => sum + payment.amount, 0);
   const bankPending = pending.filter((payment) => payment.method === "bank_transfer");
   const momoPending = pending.filter(
     (payment) => payment.method === "mtn_momo" || payment.method === "airtel_money",
@@ -117,34 +125,73 @@ export function VerificationQueue() {
         <StatCard
           label="Rejected transfers"
           value={rejected.length}
-          hint="Original records retained"
+          hint={`${formatCurrency(rejectedAmount, true)} not collected`}
           icon={X}
           tone="danger"
         />
       </div>
 
-      <div className="mt-4 rounded-xl border border-warning/25 bg-warning/[0.055] px-4 py-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
-            <ShieldCheck className="size-4" />
-          </span>
-          <div className="flex-1">
-            <p className="text-[12px] font-semibold">Verification protects the rent ledger</p>
-            <p className="text-[10.5px] leading-relaxed text-muted-foreground">
-              Pending amounts are excluded from collected rent. Approved transactions are applied
-              immediately and can only be corrected with a reversal — never silently edited.
-            </p>
+      <div className="mt-4 grid gap-4 xl:grid-cols-12">
+        <div className="rounded-xl border border-warning/25 bg-warning/[0.055] px-4 py-3 xl:col-span-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
+              <ShieldCheck className="size-4" />
+            </span>
+            <div className="flex-1">
+              <p className="text-[12px] font-semibold">Verification protects the rent ledger</p>
+              <p className="text-[10.5px] leading-relaxed text-muted-foreground">
+                Pending amounts are excluded from collected rent. Rejected/failed transfers are recorded as rejected transfers and are never counted in verified collections.
+              </p>
+            </div>
+            <Select value={methodFilter} onValueChange={setMethodFilter}>
+              <SelectTrigger size="sm" className="h-8 w-[150px] bg-card text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All channels</SelectItem>
+                <SelectItem value="bank">Bank transfers</SelectItem>
+                <SelectItem value="momo">Mobile money</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={methodFilter} onValueChange={setMethodFilter}>
-            <SelectTrigger size="sm" className="h-8 w-[150px] bg-card text-[11px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All channels</SelectItem>
-              <SelectItem value="bank">Bank transfers</SelectItem>
-              <SelectItem value="momo">Mobile money</SelectItem>
-            </SelectContent>
-          </Select>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 shadow-soft xl:col-span-4">
+          <p className="text-[12px] font-semibold">Verification overview</p>
+          <p className="text-[10.5px] text-muted-foreground">This month&apos;s verified vs queue and rejected</p>
+          <div className="mt-2 flex items-center gap-3">
+            <div className="h-[140px] w-[140px] shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Verified", value: verifiedThisMonth.length, color: "#16a34a" },
+                      { name: "Pending", value: pending.length, color: "#d97706" },
+                      { name: "Rejected", value: rejectedTransfers.length, color: "#dc2626" },
+                    ].filter((d) => d.value > 0)}
+                    dataKey="value"
+                    innerRadius={38}
+                    outerRadius={58}
+                    paddingAngle={3}
+                    stroke="none"
+                  >
+                    {[
+                      { name: "Verified", value: verifiedThisMonth.length, color: "#16a34a" },
+                      { name: "Pending", value: pending.length, color: "#d97706" },
+                      { name: "Rejected", value: rejectedTransfers.length, color: "#dc2626" },
+                    ].filter((d) => d.value > 0).map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value, name) => [`${value} payment(s)`, String(name)]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="space-y-1.5 text-[10.5px]">
+              <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-1.5 text-muted-foreground"><span className="size-2 rounded-full bg-[#16a34a]" />Verified</span><span className="font-medium">{verifiedThisMonth.length} · {formatCurrency(verifiedAmount, true)}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-1.5 text-muted-foreground"><span className="size-2 rounded-full bg-[#d97706]" />Pending</span><span className="font-medium">{pending.length} · {formatCurrency(awaiting, true)}</span></div>
+              <div className="flex items-center justify-between gap-3"><span className="flex items-center gap-1.5 text-muted-foreground"><span className="size-2 rounded-full bg-[#dc2626]" />Rejected</span><span className="font-medium">{rejectedTransfers.length} · {formatCurrency(rejectedAmount, true)}</span></div>
+            </div>
+          </div>
         </div>
       </div>
 
