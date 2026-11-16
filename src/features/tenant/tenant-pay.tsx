@@ -169,7 +169,7 @@ export function TenantPay() {
     if (!invoice) return;
     try {
       let proofPath: string | undefined;
-      if (proofFile) {
+      if (values.method !== "cash" && proofFile) {
         const path = buildDocumentPath(
           ["tenants", invoice.tenantId, "payment-proofs", invoice.id],
           proofFile.name,
@@ -181,18 +181,20 @@ export function TenantPay() {
         invoiceId: invoice.id,
         amount: values.amount,
         method: values.method,
-        bankName: values.bankName,
-        reference: values.reference,
-        proofName: proofFile?.name || values.proofName || "transfer-proof.pdf",
+        bankName: values.method === "bank_transfer" ? values.bankName : undefined,
+        reference: values.method === "cash" ? "" : (values.reference ?? ""),
+        proofName: values.method === "cash" ? undefined : (proofFile?.name || values.proofName || undefined),
         proofPath,
       });
       setBankSubmitted(true);
-      toast.success("Proof submitted", {
+      toast.success(values.method === "cash" ? "Cash payment submitted" : "Proof submitted", {
         description:
-          "Your transfer is awaiting accountant verification and is not counted as collected yet.",
+          values.method === "cash"
+            ? "Your cash payment has been submitted and is awaiting verification."
+            : "Your payment proof is awaiting accountant verification and is not counted as collected yet.",
       });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not submit proof.");
+      toast.error(error instanceof Error ? error.message : "Could not submit payment.");
     }
   });
 
@@ -416,7 +418,7 @@ export function TenantPay() {
           ) : (
             <SectionCard
               title="3. Submit bank transfer proof"
-              description="Transfers are reviewed by the finance team before they count as paid."
+              description={bankMethod === "cash" ? "Submit your cash payment amount. No proof or extra details required." : "Transfers and payments are reviewed by the finance team before they count as paid."}
               action={<Badge variant="warning">Verification required</Badge>}
             >
               <div className="px-5 pb-5">
@@ -452,7 +454,7 @@ export function TenantPay() {
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <Field label="Amount transferred" htmlFor="bank-amount" error={bankForm.formState.errors.amount?.message}>
+                      <Field label={bankMethod === "cash" ? "Amount" : "Amount transferred"} htmlFor="bank-amount" error={bankForm.formState.errors.amount?.message}>
                         <Input
                           id="bank-amount"
                           type="number"
@@ -464,9 +466,16 @@ export function TenantPay() {
                       <Field label="Payment method" htmlFor="bank-method" error={bankForm.formState.errors.method?.message}>
                         <Select
                           value={bankMethod}
-                          onValueChange={(value) =>
-                            bankForm.setValue("method", value as BankProofFormValues["method"], { shouldValidate: true })
-                          }
+                          onValueChange={(value) => {
+                            const v = value as BankProofFormValues["method"];
+                            bankForm.setValue("method", v, { shouldValidate: true });
+                            if (v === "cash") {
+                              setProofFile(null);
+                              bankForm.setValue("reference", "");
+                              bankForm.setValue("proofName", "");
+                              bankForm.setValue("bankName", "");
+                            }
+                          }}
                         >
                           <SelectTrigger id="bank-method">
                             <SelectValue />
@@ -487,36 +496,40 @@ export function TenantPay() {
                       </Field>
                     )}
 
+                    {bankMethod !== "cash" && (
+                      <>
+                        <Field label="Transfer reference" htmlFor="bank-ref" error={bankForm.formState.errors.reference?.message}>
+                          <Input id="bank-ref" placeholder="e.g. BK-TRF-008821" {...bankForm.register("reference")} />
+                        </Field>
 
-                    <Field label="Transfer reference" htmlFor="bank-ref" error={bankForm.formState.errors.reference?.message}>
-                      <Input id="bank-ref" placeholder="e.g. BK-TRF-008821" {...bankForm.register("reference")} />
-                    </Field>
-
-                    <Field label="Proof of payment" htmlFor="bank-proof" error={bankForm.formState.errors.proofName?.message} hint="Upload a screenshot or PDF of the transfer confirmation.">
-                      <div className="relative">
-                        <Upload className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          id="bank-proof"
-                          type="file"
-                          accept=".pdf,image/*"
-                          className="pl-8 file:mr-2 file:border-0 file:bg-transparent file:text-[11px]"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0] ?? null;
-                            setProofFile(file);
-                            bankForm.setValue("proofName", file?.name ?? "", { shouldValidate: true });
-                          }}
-                        />
-                      </div>
-                    </Field>
+                        <Field label="Proof of payment" htmlFor="bank-proof" error={bankForm.formState.errors.proofName?.message} hint="Upload a screenshot or PDF of the transfer confirmation.">
+                          <div className="relative">
+                            <Upload className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                              id="bank-proof"
+                              type="file"
+                              accept=".pdf,image/*"
+                              className="pl-8 file:mr-2 file:border-0 file:bg-transparent file:text-[11px]"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0] ?? null;
+                                setProofFile(file);
+                                bankForm.setValue("proofName", file?.name ?? "", { shouldValidate: true });
+                              }}
+                            />
+                          </div>
+                        </Field>
+                      </>
+                    )}
 
                     <div className="flex items-start gap-2 rounded-lg bg-warning/[0.07] px-3 py-2.5 text-[10.5px] leading-relaxed text-muted-foreground">
                       <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" />
-                      Bank transfers are marked as pending and excluded from your balance until a finance
-                      team member verifies the proof.
+                      {bankMethod === "cash"
+                        ? "Cash payments are recorded as pending until a finance team member verifies them."
+                        : "Payments are marked as pending and excluded from your balance until a finance team member verifies them."}
                     </div>
 
                     <Button type="submit" className="w-full" disabled={bankForm.formState.isSubmitting}>
-                      <Landmark className="size-4" /> Submit proof for verification
+                      <Landmark className="size-4" /> {bankMethod === "cash" ? "Submit cash payment" : "Submit proof for verification"}
                     </Button>
                   </form>
                 )}

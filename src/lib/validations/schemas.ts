@@ -170,9 +170,21 @@ export type EbmFormValues = z.infer<typeof ebmSchema>;
 export const bankProofSchema = z.object({
   method: z.enum(["mtn_momo", "airtel_money", "bank_transfer", "cash"]),
   bankName: z.string().optional(),
-  reference: z.string().min(4, "Enter the payment reference."),
-  amount: z.number().min(1, "Enter the transferred amount."),
-  proofName: z.string().min(1, "Attach proof of payment."),
+  reference: z.string().optional(),
+  amount: z.number().min(1, "Enter the amount."),
+  proofName: z.string().optional(),
+}).superRefine((val, ctx) => {
+  if (val.method !== "cash") {
+    if (!val.reference || val.reference.trim().length < 4) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["reference"], message: "Enter the payment reference." });
+    }
+    if (!val.proofName || val.proofName.trim().length < 1) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["proofName"], message: "Attach proof of payment." });
+    }
+  }
+  if (val.method === "bank_transfer" && (!val.bankName || val.bankName.trim().length < 2)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["bankName"], message: "Enter the bank name." });
+  }
 });
 
 export type BankProofFormValues = z.infer<typeof bankProofSchema>;

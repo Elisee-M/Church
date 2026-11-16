@@ -137,7 +137,7 @@ export async function submitBankTransferProof(input: {
   amount: number;
   method?: "mtn_momo" | "airtel_money" | "bank_transfer" | "cash";
   bankName?: string;
-  reference: string;
+  reference?: string;
   proofName?: string;
   proofPath?: string;
 }) {
@@ -157,6 +157,7 @@ export async function submitBankTransferProof(input: {
         : method === "cash"
           ? "cash"
           : "bank_transfer";
+  const ref = input.reference?.trim() || `${method === "cash" ? "CASH" : method.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-8)}`;
   const { error } = await supabase.from("payments").insert({
     organization_id: (inv as { organization_id: string }).organization_id,
     tenant_id: (inv as { tenant_id: string }).tenant_id,
@@ -164,11 +165,11 @@ export async function submitBankTransferProof(input: {
     amount: Math.round(input.amount),
     payment_method: dbMethod,
     provider: method === "bank_transfer" ? input.bankName || "bank" : method,
-    transaction_reference: input.reference.trim() || `${method.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-8)}`,
+    transaction_reference: ref,
     payment_status: "under_review",
     payment_date: new Date().toISOString(),
     notes: [
-      `${method === "bank_transfer" ? "Bank transfer" : method === "mtn_momo" ? "MTN MoMo" : method === "airtel_money" ? "Airtel Money" : "Cash"} payment submitted. Awaiting verification.`,
+      method === "cash" ? "Cash payment submitted. Awaiting verification." : `${method === "bank_transfer" ? "Bank transfer" : method === "mtn_momo" ? "MTN MoMo" : "Airtel Money"} payment submitted. Awaiting verification.`,
       input.proofPath ? `Proof path: ${input.proofPath}` : input.proofName ? `Proof: ${input.proofName}` : null,
     ].filter(Boolean).join(" "),
   });
